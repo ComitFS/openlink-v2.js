@@ -13833,7 +13833,7 @@ const { CommunicationIdentityClient } = __webpack_require__(1);
 const { CallClient, CallAgent, Renderer, LocalVideoStream} = __webpack_require__(184);
 const { AzureCommunicationTokenCredential }  = __webpack_require__(185);
 
-const url = "http://localhost:7070/acs/api/openlink/config";
+const url = "https://pade.chat:5443/acs/api/openlink/config";
 
 async function main() {
   console.log("openlink-v2.js");
@@ -13846,14 +13846,15 @@ async function main() {
 	const client = new CommunicationIdentityClient(config.acs_endpoint);
 	const scopes = ["voip"];
 
-	if (!config.user_endpoint)
+	if (!config.acs_user_endpoint)
 	{
 		const user = await client.createUser();	
-		config.user_endpoint = user.communicationUserId;		
-		const response = await fetch(url + "/user_endpoint", {method: "POST", body: config.user_endpoint});
+		console.log("Created user endpoint", user);		
+		config.acs_user_endpoint = user.communicationUserId;		
+		const response = await fetch(url + "/acs_user_endpoint", {method: "POST", body: config.acs_user_endpoint});
 	}
 
-	const token = await client.getToken({communicationUserId: config.user_endpoint}, scopes);
+	const token = await client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
 	console.log("Issued token:", token);
   }
 }
