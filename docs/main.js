@@ -13833,26 +13833,29 @@ const { CommunicationIdentityClient } = __webpack_require__(1);
 const { CallClient, CallAgent, Renderer, LocalVideoStream} = __webpack_require__(184);
 const { AzureCommunicationTokenCredential }  = __webpack_require__(185);
 
-const connectionString = "<azure comms endpoint>";
+const url = "http://localhost:7070/acs/api/openlink/config";
 
 async function main() {
-  console.log("\n== Issue Token Javascript Sample ==\n");
+  console.log("openlink-v2.js");
 
-  const client = new CommunicationIdentityClient(connectionString);
-  const scopes = ["chat"];
+  const response = await fetch(url);
+  const config = await response.json();
+  
+  if (config.acs_endpoint)
+  {
+	const client = new CommunicationIdentityClient(config.acs_endpoint);
+	const scopes = ["voip"];
 
-  // Create user
-  console.log("Creating User");
+	if (!config.user_endpoint)
+	{
+		const user = await client.createUser();	
+		config.user_endpoint = user.communicationUserId;		
+		const response = await fetch(url + "/user_endpoint", {method: "POST", body: config.user_endpoint});
+	}
 
-  const user = await client.createUser();
-
-  console.log(`Created user with id: ${user.communicationUserId}`);
-  console.log("Issuing Token");
-
-  // Issue token and get token from response
-  const { token } = await client.getToken(user, scopes);
-
-  console.log(`Issued token: ${token}`);
+	const token = await client.getToken({communicationUserId: config.user_endpoint}, scopes);
+	console.log("Issued token:", token);
+  }
 }
 
 main().catch((error) => {
