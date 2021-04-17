@@ -13850,8 +13850,9 @@ async function main() {
 	{
 		const user = await client.createUser();	
 		console.log("Created user endpoint", user);		
-		config.acs_user_endpoint = user.communicationUserId;		
-		const response = await fetch(url + "/acs_user_endpoint", {method: "POST", body: config.acs_user_endpoint});
+		config.acs_user_endpoint = user.communicationUserId;	
+		const options = {method: "POST", headers: {"authorization": "Basic " + btoa("dele:Welcome123")}, body: config.acs_user_endpoint };			
+		const response = await fetch(url + "/acs_user_endpoint", options);
 	}
 
 	const token = await client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
