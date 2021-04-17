@@ -13837,26 +13837,42 @@ const url = "https://pade.chat:5443/acs/api/openlink/config";
 
 async function main() {
   console.log("openlink-v2.js");
-
-  const response = await fetch(url, {method: "GET", headers: {"authorization": "Basic " + btoa("dele:Welcome123")}});
-  const config = await response.json();
+  const creds = await navigator.credentials.get({password: true});
   
-  if (config.acs_endpoint)
+  if (creds)
   {
-	const client = new CommunicationIdentityClient(config.acs_endpoint);
-	const scopes = ["voip"];
+	  const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
+	  const response = await fetch(url, {method: "GET", headers: {authorization}});
+	  const config = await response.json();
+	  
+	  if (config.acs_endpoint)
+	  {
+		const client = new CommunicationIdentityClient(config.acs_endpoint);
+		const scopes = ["voip"];
 
-	if (!config.acs_user_endpoint)
-	{
-		const user = await client.createUser();	
-		console.log("Created user endpoint", user);		
-		config.acs_user_endpoint = user.communicationUserId;	
-		const options = {method: "POST", headers: {"authorization": "Basic " + btoa("dele:Welcome123")}, body: config.acs_user_endpoint };			
-		const response = await fetch(url + "/acs_user_endpoint", options);
-	}
+		if (!config.acs_user_endpoint)
+		{
+			const user = await client.createUser();	
+			console.log("Created user endpoint", user);		
+			config.acs_user_endpoint = user.communicationUserId;	
+			const options = {method: "POST", headers: {authorization}, body: config.acs_user_endpoint };			
+			const response = await fetch(url + "/acs_user_endpoint", options);
+		}
 
-	const token = await client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
-	console.log("Issued token:", token);
+		const token = await client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
+		console.log("Issued token:", token);
+	  }
+  }
+  else {
+	  const id = prompt("username");
+	  const password = prompt("username");
+	  
+	  if (id && password)
+	  {
+		  const credential = await navigator.credentials.create({password: {id, password}});
+		  await navigator.credentials.store(credential);
+		  location.reload();
+	  }
   }
 }
 
