@@ -13838,7 +13838,7 @@ const url = "https://pade.chat:5443/acs/api/openlink/config";
 async function main() {
   console.log("openlink-v2.js");
 
-  const response = await fetch(url);
+  const response = await fetch(url, {method: "GET", headers: {"authorization": "Basic " + btoa("dele:Welcome123")}});
   const config = await response.json();
   
   if (config.acs_endpoint)
