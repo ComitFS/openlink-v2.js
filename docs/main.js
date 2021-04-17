@@ -13841,27 +13841,7 @@ async function main() {
   
   if (creds)
   {
-	  const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
-	  const response = await fetch(url, {method: "GET", headers: {authorization}});
-	  const config = await response.json();
-	  
-	  if (config.acs_endpoint)
-	  {
-		const client = new CommunicationIdentityClient(config.acs_endpoint);
-		const scopes = ["voip"];
-
-		if (!config.acs_user_endpoint)
-		{
-			const user = await client.createUser();	
-			console.log("Created user endpoint", user);		
-			config.acs_user_endpoint = user.communicationUserId;	
-			const options = {method: "POST", headers: {authorization}, body: config.acs_user_endpoint };			
-			const response = await fetch(url + "/acs_user_endpoint", options);
-		}
-
-		const token = await client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
-		console.log("Issued token:", token);
-	  }
+	getToken(creds);
   }
   else {
 	  const id = prompt("Username");
@@ -13869,11 +13849,41 @@ async function main() {
 	  
 	  if (id && password)
 	  {
-		  const credential = await navigator.credentials.create({password: {id, password}});
-		  await navigator.credentials.store(credential);
-		  setTimeout(location.reload, 1000);
+		  creds = {password: {id, password}};
+		  const credentials = await navigator.credentials.create(creds);
+		  
+		  if (credentials)
+		  {
+			  await navigator.credentials.store(credentials);
+			  getToken(creds);
+		  }
 	  }
   }
+}
+
+async function getToken(creds)
+{
+  const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
+  const response = await fetch(url, {method: "GET", headers: {authorization}});
+  const config = await response.json();
+  
+  if (config.acs_endpoint)
+  {
+	const client = new CommunicationIdentityClient(config.acs_endpoint);
+	const scopes = ["voip"];
+
+	if (!config.acs_user_endpoint)
+	{
+		const user = await client.createUser();	
+		console.log("Created user endpoint", user);		
+		config.acs_user_endpoint = user.communicationUserId;	
+		const options = {method: "POST", headers: {authorization}, body: config.acs_user_endpoint };			
+		const response = await fetch(url + "/acs_user_endpoint", options);
+	}
+
+	const token = await client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
+	console.log("Issued token:", token);
+  }	
 }
 
 main().catch((error) => {
