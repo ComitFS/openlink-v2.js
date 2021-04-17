@@ -13864,14 +13864,14 @@ async function main() {
 	  }
   }
   else {
-	  const id = prompt("username");
-	  const password = prompt("username");
+	  const id = prompt("Username");
+	  const password = prompt("Password");
 	  
 	  if (id && password)
 	  {
 		  const credential = await navigator.credentials.create({password: {id, password}});
 		  await navigator.credentials.store(credential);
-		  location.reload();
+		  setTimeout(location.reload, 1000);
 	  }
   }
 }
