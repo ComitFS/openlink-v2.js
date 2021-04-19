@@ -13850,7 +13850,7 @@ async function main() {
 	
 	if (id)
 	{
-		const password = await webAuthn(id);
+		let password = await webAuthn(id);
 		if (!password) password = prompt("Password");
 		
 		if (password)
