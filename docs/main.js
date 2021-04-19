@@ -13856,7 +13856,7 @@ async function main() {
 		if (password)
 		{
 			creds = {password: {id, password}};
-			token = await getToken(creds);	
+			token = await getToken({id, password});	
 			console.log("Issued token from new creds:", token);	
 
 			if (token)
