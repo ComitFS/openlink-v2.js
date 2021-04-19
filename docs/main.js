@@ -13880,10 +13880,11 @@ async function webAuthn(id)
 	{
 		listItem.id = bufferDecode(listItem.id)
 	});
-
+	console.debug("webAuthn step 2", options);	
+	
 	options.publicKeyCredentialRequestOptions.challenge = bufferDecode(options.publicKeyCredentialRequestOptions.challenge);						
 	const assertion = await navigator.credentials.get({publicKey: options.publicKeyCredentialRequestOptions});	
-	console.debug("webAuthn step 2", assertion, assertion.id, assertion.type);	
+	console.debug("webAuthn step 3", assertion, assertion.id, assertion.type);	
 	
 	const credential = {};
 	credential.id =     assertion.id;
@@ -13898,9 +13899,9 @@ async function webAuthn(id)
 		credential.response = {clientDataJSON, authenticatorData,	signature, userHandle};
 		if (!credential.clientExtensionResults) credential.clientExtensionResults = {};						  
 	}
-	console.debug("webAuthn step 3", credential);
+	console.debug("webAuthn step 4", credential);
 	const response2 = await fetch(url + "/authenticate/finish/" + id, {method: "POST", body: JSON.stringify(credential)});
-	console.debug("webAuthn step 4", response2);
+	console.debug("webAuthn step 5", response2);
 	return credential.id;
 }
 
@@ -13968,10 +13969,7 @@ async function getToken(creds)
 }
 
 main().catch((error) => {
-  console.error("Encountered an error while issuing token: ");
-  console.error("Request: \n", error.request);
-  console.error("\nResponse: \n", error.response);
-  console.error(error);
+  console.error("Encountered an error while issuing token: ", error);
 });
 
 function bufferDecode(e) 
