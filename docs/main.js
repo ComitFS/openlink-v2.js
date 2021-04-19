@@ -13902,8 +13902,8 @@ async function webAuthn(id)
 		if (!credential.clientExtensionResults) credential.clientExtensionResults = {};						  
 	}
 	console.debug("webAuthn step 3", credential);
-	const response = await fetch(url + "/authenticate/finish/" + id, {method: "POST", body: JSON.stringify(credential)});
-	console.debug("webAuthn step 4", response);
+	const response2 = await fetch(url + "/authenticate/finish/" + id, {method: "POST", body: JSON.stringify(credential)});
+	console.debug("webAuthn step 4", response2);
 	return credential.id;
 }
 
@@ -13942,9 +13942,9 @@ async function webRegister(creds)
 
 	const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
 	console.debug("webRegister step 3", credential);		
-	const response = await fetch(url + "/register/finish", {method: "POST", headers: {authorization}, body: JSON.stringify(credential)});	
-	console.debug("webRegister step 4", response);	
-	return response;
+	const response2 = await fetch(url + "/register/finish", {method: "POST", headers: {authorization}, body: JSON.stringify(credential)});	
+	console.debug("webRegister step 4", response2);	
+	return response2;
 }
 
 async function getToken(creds)
