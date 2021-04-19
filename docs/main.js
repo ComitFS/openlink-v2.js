@@ -13847,11 +13847,17 @@ async function main() {
   }
   else {
 	const id = prompt("Username");	
+	let register = false;
 	
 	if (id)
 	{
 		let password = await webAuthn(id);
-		if (!password) password = prompt("Password");
+		
+		if (!password)
+		{
+			register = true;
+			password = prompt("Password");
+		}
 		
 		if (password)
 		{
@@ -13863,8 +13869,12 @@ async function main() {
 			{
 				const credentials = await navigator.credentials.create(creds);
 				await navigator.credentials.store(credentials);
-				const resp = await webRegister(creds.password);	
-				console.log("web authn registration response", resp);	
+				
+				if (register)
+				{
+					const resp = await webRegister(creds.password);	
+					console.log("web authn registration response", resp);	
+				}
 			}
 		}
 	}
