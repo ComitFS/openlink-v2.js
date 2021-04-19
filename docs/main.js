@@ -13940,7 +13940,6 @@ async function webRegister(creds)
 	  if (!credential.clientExtensionResults) credential.clientExtensionResults = {};
 	}
 
-	const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
 	console.debug("webRegister step 3", credential);		
 	const response2 = await fetch(url + "/register/finish", {method: "POST", headers: {authorization}, body: JSON.stringify(credential)});	
 	console.debug("webRegister step 4", response2);	
