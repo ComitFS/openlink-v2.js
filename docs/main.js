@@ -13833,32 +13833,118 @@ const { CommunicationIdentityClient } = __webpack_require__(1);
 const { CallClient, CallAgent, Renderer, LocalVideoStream} = __webpack_require__(184);
 const { AzureCommunicationTokenCredential }  = __webpack_require__(185);
 
-const url = "https://pade.chat:5443/acs/api/openlink/config";
-
+ const url = "https://pade.chat:5443/acs/api/openlink/config";	
+  
 async function main() {
   console.log("openlink-v2.js");
   const creds = await navigator.credentials.get({password: true});
+  const token;
   
   if (creds)
   {
-	getToken(creds);
+	token = await getToken(creds);	  
+	console.log("Issued token from stored creds:", token);	  
   }
   else {
-	  const id = prompt("Username");
-	  const password = prompt("Password");
-	  
-	  if (id && password)
-	  {
-		  creds = {password: {id, password}};
-		  const credentials = await navigator.credentials.create(creds);
-		  
-		  if (credentials)
-		  {
-			  await navigator.credentials.store(credentials);
-			  getToken(creds);
-		  }
-	  }
-  }
+	const id = prompt("Username");	
+	
+	if (id)
+	{
+		const assertion = await startAuthn(id);
+		const password = await finishAuthn(id, assertion);
+		
+		if (!password) password = prompt("Password");
+		
+		if (password)
+		{
+			creds = {password: {id, password}};
+			token = await getToken(creds);	
+			console.log("Issued token from new creds:", token);	
+
+			if (token)
+			{
+				const credentials = await navigator.credentials.create(creds);
+				await navigator.credentials.store(credentials);
+				
+				const cred = await startRegister(creds);
+				const resp = await finishRegister(creds, cred);	
+				console.log("web authn registration response", resp);	
+			}
+		}
+	}
+}
+async function webAuthn(id)
+{
+	console.debug("webAuthn step 1", id);
+	const response = await fetch(url + "/authenticate/start/" + id);
+	const options =  await response.json();
+		
+	options.publicKeyCredentialRequestOptions.allowCredentials.forEach(function (listItem) 
+	{
+		listItem.id = bufferDecode(listItem.id)
+	});
+
+	options.publicKeyCredentialRequestOptions.challenge = bufferDecode(options.publicKeyCredentialRequestOptions.challenge);						
+	const assertion = await navigator.credentials.get({publicKey: options.publicKeyCredentialRequestOptions});	
+	console.debug("webAuthn step 2", assertion, assertion.id, assertion.type);	
+	
+	const credential = {};
+	credential.id =     assertion.id;
+	credential.type =   assertion.type;
+	credential.rawId =  bufferEncode(assertion.rawId);
+
+	if (assertion.response) {
+		const clientDataJSON = bufferEncode(assertion.response.clientDataJSON);
+		const authenticatorData = bufferEncode(assertion.response.authenticatorData);
+		const signature = bufferEncode(assertion.response.signature);
+		const userHandle = bufferEncode(assertion.response.userHandle);
+		credential.response = {clientDataJSON, authenticatorData,	signature, userHandle};
+		if (!credential.clientExtensionResults) credential.clientExtensionResults = {};						  
+	}
+	console.debug("webAuthn step 3", credential);
+	const response = await fetch(url + "/authenticate/finish/" + id, {method: "POST", body: JSON.stringify(credential)});
+	console.debug("webAuthn step 4", response);
+	return credential.id;
+}
+
+
+async function webRegister(creds)
+{
+	console.debug("webRegister step 1", creds);
+	const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
+	const response = await fetch(url + "/register/start", {method: "POST", headers: {authorization}});	
+	const credentialCreationOptions =  await response.json();
+		
+	if (credentialCreationOptions.excludeCredentials) 
+	{
+		credentialCreationOptions.excludeCredentials.forEach(function (listItem) 
+		{
+			listItem.id = bufferDecode(listItem.id)
+		});
+	}
+	
+	credentialCreationOptions.challenge = bufferDecode(credentialCreationOptions.challenge);
+	credentialCreationOptions.user.id = bufferDecode(credentialCreationOptions.user.id);
+	const cred = await navigator.credentials.create({publicKey: credentialCreationOptions});	
+	console.debug("webRegister step 2", creds, cred);
+	
+	const credential = {};
+	credential.id =     cred.id;
+	credential.rawId =  bufferEncode(cred.rawId);
+	credential.type =   cred.type;
+
+	if (cred.response) {
+	  const clientDataJSON = bufferEncode(cred.response.clientDataJSON);
+	  const attestationObject = bufferEncode(cred.response.attestationObject);
+	  credential.response = {clientDataJSON, attestationObject};
+	  if (!credential.clientExtensionResults) credential.clientExtensionResults = {};
+	}
+
+	const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
+	console.debug("webRegister step 3", credential);		
+	const response = await fetch(url + "/register/finish", {method: "POST", headers: {authorization}, body: JSON.stringify(credential)});	
+	console.debug("webRegister step 4", response);	
+	return response;
 }
 
 async function getToken(creds)
@@ -13881,8 +13967,7 @@ async function getToken(creds)
 		const response = await fetch(url + "/acs_user_endpoint", options);
 	}
 
-	const token = await client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
-	console.log("Issued token:", token);
+	return client.getToken({communicationUserId: config.acs_user_endpoint}, scopes);
   }	
 }
 
@@ -13893,6 +13978,24 @@ main().catch((error) => {
   console.error(error);
 });
 
+function bufferDecode(e) 
+{
+	const t = "==".slice(0, (4 - e.length % 4) % 4),
+		n = e.replace(/-/g, "+").replace(/_/g, "/") + t,
+		r = atob(n),
+		o = new ArrayBuffer(r.length),
+		c = new Uint8Array(o);
+	for (let e = 0; e < r.length; e++) c[e] = r.charCodeAt(e);
+	return o
+}
+
+function bufferEncode(e) 
+{
+	const t = new Uint8Array(e);
+	let n = "";
+	for (const e of t) n += String.fromCharCode(e);
+	return btoa(n).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
+}
 })();
 
 /******/ })()
