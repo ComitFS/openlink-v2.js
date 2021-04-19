@@ -13850,9 +13850,7 @@ async function main() {
 	
 	if (id)
 	{
-		const assertion = await startAuthn(id);
-		const password = await finishAuthn(id, assertion);
-		
+		const password = await webAuthn(id);
 		if (!password) password = prompt("Password");
 		
 		if (password)
@@ -13865,9 +13863,7 @@ async function main() {
 			{
 				const credentials = await navigator.credentials.create(creds);
 				await navigator.credentials.store(credentials);
-				
-				const cred = await startRegister(creds);
-				const resp = await finishRegister(creds, cred);	
+				const resp = await webRegister(creds);	
 				console.log("web authn registration response", resp);	
 			}
 		}
