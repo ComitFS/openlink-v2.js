@@ -13875,6 +13875,11 @@ async function webAuthn(id)
 	console.debug("webAuthn step 1", id);
 	const response = await fetch(url + "/authenticate/start/" + id, {method: "POST"});
 	const options =  await response.json();
+	
+	if (publicKeyCredentialRequestOptions.allowCredentials.length == 0)
+	{
+		return null;
+	}
 		
 	options.publicKeyCredentialRequestOptions.allowCredentials.forEach(function (listItem) 
 	{
