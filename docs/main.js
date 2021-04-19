@@ -13872,6 +13872,7 @@ async function main() {
 			}
 		}
 	}
+  }
 }
 async function webAuthn(id)
 {
@@ -13985,7 +13986,7 @@ function bufferDecode(e)
 		o = new ArrayBuffer(r.length),
 		c = new Uint8Array(o);
 	for (let e = 0; e < r.length; e++) c[e] = r.charCodeAt(e);
-	return o
+	return o;
 }
 
 function bufferEncode(e) 
