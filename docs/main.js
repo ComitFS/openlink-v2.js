@@ -13838,7 +13838,7 @@ const { AzureCommunicationTokenCredential }  = __webpack_require__(185);
 async function main() {
   console.log("openlink-v2.js");
   const creds = await navigator.credentials.get({password: true});
-  const token;
+  let token;
   
   if (creds)
   {
