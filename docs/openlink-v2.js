@@ -24,7 +24,7 @@ export default class Openlink
 		if (creds)
 		{
 			options.id = creds.id;
-			options.password = creds.id;
+			options.password = creds.password;
 			this.token = await this.getToken(options);	  
 			console.debug("Issued token from stored creds:", this.token);
 			return;
