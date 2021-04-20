@@ -23,7 +23,9 @@ export default class Openlink
 
 		if (creds)
 		{
-			this.token = await this.getToken({...options, ...creds});	  
+			options.id = creds.id;
+			options.password = creds.id;
+			this.token = await this.getToken(options);	  
 			console.debug("Issued token from stored creds:", this.token);
 			return;
 		}
@@ -42,12 +44,14 @@ export default class Openlink
 			
 			if (password)
 			{
-				creds = {password: {id, password}};
-				this.token = await getToken({...options, ...creds.password});	
+				options.id = id;
+				options.password = password;				
+				this.token = await getToken(options);	
 				console.debug("Issued token from new creds:", this.token);	
 
 				if (this.token)
 				{
+					creds = {password: {id, password}};					
 					const credentials = await navigator.credentials.create(creds);
 					await navigator.credentials.store(credentials);
 					
