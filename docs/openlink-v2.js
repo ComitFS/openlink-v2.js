@@ -2,13 +2,13 @@ export default class Openlink
 {
     constructor()
     {
-
+		this.register = false;	
+		this.token = null;
     }
 
     async connect(options)
     {
-		console.debug("openlink-v2.js", options);
-		this.register = false;		
+		console.debug("openlink-v2.js", options);	
 		
 		if (options.id && options.password)
 		{
@@ -59,7 +59,7 @@ export default class Openlink
 		}
     }
 	
-	async function getToken(options)
+	async getToken(options)
 	{
 		const authorization = "Basic " + btoa(options.id + ":" + options.password);
 		const response = await fetch(url, {method: "GET", headers: {authorization}});
@@ -85,7 +85,7 @@ export default class Openlink
 		}	
 	}	
 
-	async function webAuthn(id)
+	async webAuthn(id)
 	{
 		console.debug("webAuthn step 1", id);
 		const response = await fetch(url + "/authenticate/start/" + id, {method: "POST"});
@@ -98,24 +98,24 @@ export default class Openlink
 			
 		options.publicKeyCredentialRequestOptions.allowCredentials.forEach(function (listItem) 
 		{
-			listItem.id = bufferDecode(listItem.id)
+			listItem.id = this.bufferDecode(listItem.id)
 		});
 		console.debug("webAuthn step 2", options);	
 		
-		options.publicKeyCredentialRequestOptions.challenge = bufferDecode(options.publicKeyCredentialRequestOptions.challenge);						
+		options.publicKeyCredentialRequestOptions.challenge = this.bufferDecode(options.publicKeyCredentialRequestOptions.challenge);						
 		const assertion = await navigator.credentials.get({publicKey: options.publicKeyCredentialRequestOptions});	
 		console.debug("webAuthn step 3", assertion, assertion.id, assertion.type);	
 		
 		const credential = {};
 		credential.id =     assertion.id;
 		credential.type =   assertion.type;
-		credential.rawId =  bufferEncode(assertion.rawId);
+		credential.rawId =  this.bufferEncode(assertion.rawId);
 
 		if (assertion.response) {
-			const clientDataJSON = bufferEncode(assertion.response.clientDataJSON);
-			const authenticatorData = bufferEncode(assertion.response.authenticatorData);
-			const signature = bufferEncode(assertion.response.signature);
-			const userHandle = bufferEncode(assertion.response.userHandle);
+			const clientDataJSON = this.bufferEncode(assertion.response.clientDataJSON);
+			const authenticatorData = this.bufferEncode(assertion.response.authenticatorData);
+			const signature = this.bufferEncode(assertion.response.signature);
+			const userHandle = this.bufferEncode(assertion.response.userHandle);
 			credential.response = {clientDataJSON, authenticatorData,	signature, userHandle};
 			if (!credential.clientExtensionResults) credential.clientExtensionResults = {};						  
 		}
@@ -126,7 +126,7 @@ export default class Openlink
 	}
 
 
-	async function webRegister(creds)
+	async webRegister(creds)
 	{
 		console.debug("webRegister step 1", creds);
 		const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
@@ -137,23 +137,23 @@ export default class Openlink
 		{
 			credentialCreationOptions.excludeCredentials.forEach(function (listItem) 
 			{
-				listItem.id = bufferDecode(listItem.id)
+				listItem.id = this.bufferDecode(listItem.id)
 			});
 		}
 		
-		credentialCreationOptions.challenge = bufferDecode(credentialCreationOptions.challenge);
-		credentialCreationOptions.user.id = bufferDecode(credentialCreationOptions.user.id);
+		credentialCreationOptions.challenge = this.bufferDecode(credentialCreationOptions.challenge);
+		credentialCreationOptions.user.id = this.bufferDecode(credentialCreationOptions.user.id);
 		const cred = await navigator.credentials.create({publicKey: credentialCreationOptions});	
 		console.debug("webRegister step 2", creds, cred);
 		
 		const credential = {};
 		credential.id =     cred.id;
-		credential.rawId =  bufferEncode(cred.rawId);
+		credential.rawId =  this.bufferEncode(cred.rawId);
 		credential.type =   cred.type;
 
 		if (cred.response) {
-		  const clientDataJSON = bufferEncode(cred.response.clientDataJSON);
-		  const attestationObject = bufferEncode(cred.response.attestationObject);
+		  const clientDataJSON = this.bufferEncode(cred.response.clientDataJSON);
+		  const attestationObject = this.bufferEncode(cred.response.attestationObject);
 		  credential.response = {clientDataJSON, attestationObject};
 		  if (!credential.clientExtensionResults) credential.clientExtensionResults = {};
 		}
@@ -164,7 +164,7 @@ export default class Openlink
 		return response2;
 	}
 	
-	function bufferDecode(e) 
+	bufferDecode(e) 
 	{
 		const t = "==".slice(0, (4 - e.length % 4) % 4),
 			n = e.replace(/-/g, "+").replace(/_/g, "/") + t,
@@ -175,7 +175,7 @@ export default class Openlink
 		return o;
 	}
 
-	function bufferEncode(e) 
+	bufferEncode(e) 
 	{
 		const t = new Uint8Array(e);
 		let n = "";
