@@ -13833,7 +13833,7 @@ const { CommunicationIdentityClient } = __webpack_require__(1);
 const { CallClient, CallAgent, Renderer, LocalVideoStream} = __webpack_require__(184);
 const { AzureCommunicationTokenCredential }  = __webpack_require__(185);
 
-window.openlink_acs = {CommunicationIdentityClient, CallClient, CallAgent, Renderer, LocalVideoStream, AzureCommunicationTokenCredential}
+export {CommunicationIdentityClient, CallClient, CallAgent, Renderer, LocalVideoStream, AzureCommunicationTokenCredential}
 })();
 
 /******/ })()
