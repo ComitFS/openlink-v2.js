@@ -1,3 +1,5 @@
-export const { CommunicationIdentityClient } = require("@azure/communication-identity");
-export const { CallClient, CallAgent, Renderer, LocalVideoStream} = require("@azure/communication-calling");
-export const { AzureCommunicationTokenCredential }  = require("@azure/communication-common");
+import { CommunicationIdentityClient } from "@azure/communication-identity";
+import { CallClient, CallAgent, Renderer, LocalVideoStream} from "@azure/communication-calling";
+import { AzureCommunicationTokenCredential } from "@azure/communication-common";
+
+export {CommunicationIdentityClient, CallClient, CallAgent};
