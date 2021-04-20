@@ -63,6 +63,7 @@ export default class Openlink
 	
 	async getToken(options)
 	{
+		console.debug("getToken", options);		
 		const authorization = "Basic " + btoa(options.id + ":" + options.password);
 		const response = await fetch(this.url, {method: "GET", headers: {authorization}});
 		const config = await response.json();
