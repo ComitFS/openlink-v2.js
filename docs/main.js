@@ -13822,7 +13822,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-window.openlink_acs =  {CommunicationIdentityClient: _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__.CommunicationIdentityClient, CallClient: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallClient, CallAgent: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallAgent};
+window.ACS =  {CommunicationIdentityClient: _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__.CommunicationIdentityClient, CallClient: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallClient, CallAgent: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallAgent};
 })();
 
 /******/ })()

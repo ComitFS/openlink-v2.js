@@ -1,178 +1,116 @@
+import Openlink from "./openlink-v2.js";
+import streamDeckXL from "./stream-deck-xl.js";
+import streamDeck from "./stream-deck.js";
+
+const stream_deck = new streamDeck();
+const stream_deck_xl = new streamDeckXL();
+const openlink = new Openlink();
 
 const url = "https://pade.chat:5443/acs/api/openlink/config";	
-  
-async function main() {
-  console.log("openlink-v2.js");
-  let creds = await navigator.credentials.get({password: true});
-  let token;
-  
-  if (creds)
-  {
-	token = await getToken(creds);	  
-	console.log("Issued token from stored creds:", token);	  
-  }
-  else {
-	const id = prompt("Username");	
-	let register = false;
-	
-	if (id)
-	{
-		let password = await webAuthn(id);
-		
-		if (!password)
-		{
-			register = true;
-			password = prompt("Password");
-		}
-		
-		if (password)
-		{
-			creds = {password: {id, password}};
-			token = await getToken(creds.password);	
-			console.log("Issued token from new creds:", token);	
 
-			if (token)
-			{
-				const credentials = await navigator.credentials.create(creds);
-				await navigator.credentials.store(credentials);
-				
-				if (register)
-				{
-					const resp = await webRegister(creds.password);	
-					console.log("web authn registration response", resp);	
-				}
-			}
-		}
-	}
-  }
-}
-async function webAuthn(id)
+window.addEventListener("unload", function()
 {
-	console.debug("webAuthn step 1", id);
-	const response = await fetch(url + "/authenticate/start/" + id, {method: "POST"});
-	const options =  await response.json();
-	
-	if (options.publicKeyCredentialRequestOptions.allowCredentials.length == 0)
-	{
-		return null;
-	}
-		
-	options.publicKeyCredentialRequestOptions.allowCredentials.forEach(function (listItem) 
-	{
-		listItem.id = bufferDecode(listItem.id)
-	});
-	console.debug("webAuthn step 2", options);	
-	
-	options.publicKeyCredentialRequestOptions.challenge = bufferDecode(options.publicKeyCredentialRequestOptions.challenge);						
-	const assertion = await navigator.credentials.get({publicKey: options.publicKeyCredentialRequestOptions});	
-	console.debug("webAuthn step 3", assertion, assertion.id, assertion.type);	
-	
-	const credential = {};
-	credential.id =     assertion.id;
-	credential.type =   assertion.type;
-	credential.rawId =  bufferEncode(assertion.rawId);
-
-	if (assertion.response) {
-		const clientDataJSON = bufferEncode(assertion.response.clientDataJSON);
-		const authenticatorData = bufferEncode(assertion.response.authenticatorData);
-		const signature = bufferEncode(assertion.response.signature);
-		const userHandle = bufferEncode(assertion.response.userHandle);
-		credential.response = {clientDataJSON, authenticatorData,	signature, userHandle};
-		if (!credential.clientExtensionResults) credential.clientExtensionResults = {};						  
-	}
-	console.debug("webAuthn step 4", credential);
-	const response2 = await fetch(url + "/authenticate/finish/" + id, {method: "POST", body: JSON.stringify(credential)});
-	console.debug("webAuthn step 5", response2);
-	return credential.id;
-}
-
-
-async function webRegister(creds)
-{
-	console.debug("webRegister step 1", creds);
-	const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
-	const response = await fetch(url + "/register/start", {method: "POST", headers: {authorization}});	
-	const credentialCreationOptions =  await response.json();
-		
-	if (credentialCreationOptions.excludeCredentials) 
-	{
-		credentialCreationOptions.excludeCredentials.forEach(function (listItem) 
-		{
-			listItem.id = bufferDecode(listItem.id)
-		});
-	}
-	
-	credentialCreationOptions.challenge = bufferDecode(credentialCreationOptions.challenge);
-	credentialCreationOptions.user.id = bufferDecode(credentialCreationOptions.user.id);
-	const cred = await navigator.credentials.create({publicKey: credentialCreationOptions});	
-	console.debug("webRegister step 2", creds, cred);
-	
-	const credential = {};
-	credential.id =     cred.id;
-	credential.rawId =  bufferEncode(cred.rawId);
-	credential.type =   cred.type;
-
-	if (cred.response) {
-	  const clientDataJSON = bufferEncode(cred.response.clientDataJSON);
-	  const attestationObject = bufferEncode(cred.response.attestationObject);
-	  credential.response = {clientDataJSON, attestationObject};
-	  if (!credential.clientExtensionResults) credential.clientExtensionResults = {};
-	}
-
-	console.debug("webRegister step 3", credential);		
-	const response2 = await fetch(url + "/register/finish", {method: "POST", headers: {authorization}, body: JSON.stringify(credential)});	
-	console.debug("webRegister step 4", response2);	
-	return response2;
-}
-
-async function getToken(creds)
-{
-  const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
-  const response = await fetch(url, {method: "GET", headers: {authorization}});
-  const config = await response.json();
-  
-  if (config.acs_endpoint)
-  {
-	const client = new openlink_acs.CommunicationIdentityClient(config.acs_endpoint);
-	const scopes = ["voip"];
-	
-	BrowserDetect.init();
-	const profile = "acs_profile_" + (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();	
-
-	if (!config[profile])
-	{
-		const user = await client.createUser();	
-		console.log("Created user endpoint", user);		
-		config[profile] = user.communicationUserId;	
-		const options = {method: "POST", headers: {authorization}, body: config[profile] };			
-		const response = await fetch(url + "/" + profile, options);
-	}
-
-	return client.getToken({communicationUserId: config[profile]}, scopes);
-  }	
-}
-
-main().catch((error) => {
-  console.error("Encountered an error while issuing token: ", error);
+    window.eventChannel.close();
+    if (window.streamDeck?.device) window.streamDeck.disconnect();
 });
 
-function bufferDecode(e) 
+window.addEventListener("load", function()
 {
-	const t = "==".slice(0, (4 - e.length % 4) % 4),
-		n = e.replace(/-/g, "+").replace(/_/g, "/") + t,
-		r = atob(n),
-		o = new ArrayBuffer(r.length),
-		c = new Uint8Array(o);
-	for (let e = 0; e < r.length; e++) c[e] = r.charCodeAt(e);
-	return o;
+	setupStreamDeck()
+	BrowserDetect.init();
+	
+	const profile = "acs_profile_" + (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();		
+	openlink.connect({profile});
+});
+	
+function setupStreamDeck()
+{
+    const streamdeck_div = document.getElementById("streamdeck");
+
+    const connect = document.getElementById("connect");
+    connect.addEventListener('click', event =>
+    {
+        getStreamDeck();
+
+        if (connect.dataset.status == "off")
+        {
+            window.streamDeck.connect(function(error)
+            {
+                if (!error)
+                {
+                    window.streamDeck.reset();
+                    window.streamDeck.setBrightness(80);
+
+                    connect.innerHTML = "Disconnect Device";
+                    connect.dataset.status = "on";
+                }
+                else alert("Stream Deck device not found");
+            });
+
+        }
+        else {
+            window.streamDeck.reset();
+            window.streamDeck.disconnect();
+
+            connect.innerHTML = "Connect Device";
+            connect.dataset.status = "off";
+        }
+    });
+
+    const showui = document.getElementById("showui");
+    showui.addEventListener('click', event =>
+    {
+        getStreamDeck();
+
+        window.streamDeck.showUI(function()
+        {
+            window.actionChannel = new BroadcastChannel('stream-deck-action');
+            window.actionChannel.postMessage({action: 'refresh'});
+
+        }, streamdeck_div);
+    });
+
+    const load = document.getElementById("load");
+    load.addEventListener('click', event =>
+    {
+        window.streamDeck.writeText(0, "Jappy", "white", "red");
+        window.streamDeck.writeText(1, "Chris", "white", "blue");
+		window.streamDeck.writeText(2, "Oliver", "white", "green");
+
+    });
+
+    setupEventHandler();	
 }
 
-function bufferEncode(e) 
+function getStreamDeck()
 {
-	const t = new Uint8Array(e);
-	let n = "";
-	for (const e of t) n += String.fromCharCode(e);
-	return btoa(n).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
+    const device = document.getElementById("device");
+    console.debug("device", device.value);
+
+    window.streamDeck = (device.value == "stream-deck") ? stream_deck : stream_deck_xl;
+}
+
+function setupEventHandler()
+{
+    window.eventChannel = new BroadcastChannel('stream-deck-event');
+    window.eventChannel.addEventListener('message', event =>
+    {
+        if (event.data.event == "keys")
+        {
+            const keys = event.data.keys;
+            console.debug("key press", keys);
+
+            if (keys[0]?.down) console.log("key 0 pressed");
+            if (keys[1]?.down) console.log("key 1 pressed");
+            if (keys[2]?.down) console.log("key 2 pressed");
+        }
+        else
+
+        if (event.data.event == "images")
+        {
+            window.streamDeck.handleScreen(event);
+        }
+    });
 }
 
 const BrowserDetect = {

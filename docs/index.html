@@ -1,2 +1,16 @@
-<script src="./main.js"></script>
-<script type="module" src="./index.js"></script>
+<html>
+<head>
+	<script src="./main.js"></script>
+	<script type="module" src="./index.js"></script>
+</head>
+<body>
+    <select id="device">
+        <option value="stream-deck">Stream Deck</option>
+        <option value="stream-deck-xl">Stream Deck XL</option>
+    </select>
+    <button id="connect" data-status="off">Connect Device</button>
+    <button id="showui">Show UI</button>
+    <button id="load">Load Speed Dials</button>
+    <div id="streamdeck"></div>
+</body>
+</html>
