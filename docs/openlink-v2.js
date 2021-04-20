@@ -4,10 +4,12 @@ export default class Openlink
     {
 		this.register = false;	
 		this.token = null;
+		this.url = null;
     }
 
     async connect(options)
     {
+		this.url = options?.url || (location.protocol + "//" + location.host);
 		console.debug("openlink-v2.js", options);	
 		
 		if (options.id && options.password)
@@ -62,7 +64,7 @@ export default class Openlink
 	async getToken(options)
 	{
 		const authorization = "Basic " + btoa(options.id + ":" + options.password);
-		const response = await fetch(url, {method: "GET", headers: {authorization}});
+		const response = await fetch(this.url, {method: "GET", headers: {authorization}});
 		const config = await response.json();
 
 		if (config.acs_endpoint)
@@ -78,7 +80,7 @@ export default class Openlink
 				console.debug("Created user endpoint", user);		
 				config[options.profile] = user.communicationUserId;	
 				const request = {method: "POST", headers: {authorization}, body: config[options.profile] };			
-				const response = await fetch(url + "/" + options.profile, request);
+				const response = await fetch(this.url + "/" + options.profile, request);
 			}
 			
 			return client.getToken({communicationUserId: config[options.profile]}, scopes);
@@ -88,7 +90,7 @@ export default class Openlink
 	async webAuthn(id)
 	{
 		console.debug("webAuthn step 1", id);
-		const response = await fetch(url + "/authenticate/start/" + id, {method: "POST"});
+		const response = await fetch(this.url + "/authenticate/start/" + id, {method: "POST"});
 		const options =  await response.json();
 		
 		if (options.publicKeyCredentialRequestOptions.allowCredentials.length == 0)
@@ -120,7 +122,7 @@ export default class Openlink
 			if (!credential.clientExtensionResults) credential.clientExtensionResults = {};						  
 		}
 		console.debug("webAuthn step 4", credential);
-		const response2 = await fetch(url + "/authenticate/finish/" + id, {method: "POST", body: JSON.stringify(credential)});
+		const response2 = await fetch(this.url + "/authenticate/finish/" + id, {method: "POST", body: JSON.stringify(credential)});
 		console.debug("webAuthn step 5", response2);
 		return credential.id;
 	}
@@ -130,7 +132,7 @@ export default class Openlink
 	{
 		console.debug("webRegister step 1", creds);
 		const authorization = "Basic " + btoa(creds.id + ":" + creds.password);
-		const response = await fetch(url + "/register/start", {method: "POST", headers: {authorization}});	
+		const response = await fetch(this.url + "/register/start", {method: "POST", headers: {authorization}});	
 		const credentialCreationOptions =  await response.json();
 			
 		if (credentialCreationOptions.excludeCredentials) 
@@ -159,7 +161,7 @@ export default class Openlink
 		}
 
 		console.debug("webRegister step 3", credential);		
-		const response2 = await fetch(url + "/register/finish", {method: "POST", headers: {authorization}, body: JSON.stringify(credential)});	
+		const response2 = await fetch(this.url + "/register/finish", {method: "POST", headers: {authorization}, body: JSON.stringify(credential)});	
 		console.debug("webRegister step 4", response2);	
 		return response2;
 	}

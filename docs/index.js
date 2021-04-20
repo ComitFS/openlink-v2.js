@@ -6,7 +6,6 @@ const stream_deck = new streamDeck();
 const stream_deck_xl = new streamDeckXL();
 const openlink = new Openlink();
 
-const url = "https://pade.chat:5443/acs/api/openlink/config";	
 
 window.addEventListener("unload", function()
 {
@@ -19,8 +18,10 @@ window.addEventListener("load", function()
 	setupStreamDeck()
 	BrowserDetect.init();
 	
-	const profile = "acs_profile_" + (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();		
-	openlink.connect({profile});
+	const url = "https://pade.chat:5443/acs/api/openlink/config";		
+	const profile = "acs_profile_" + (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();
+	
+	openlink.connect({profile, url});
 });
 	
 function setupStreamDeck()
