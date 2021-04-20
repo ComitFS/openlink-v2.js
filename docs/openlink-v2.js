@@ -9,7 +9,7 @@ export default class Openlink
 
     async connect(options)
     {
-		this.url = options?.url || (location.protocol + "//" + location.host);
+		this.url = options?.url || (location.protocol + "//" + location.host + "/acs/api/openlink/config");
 		console.debug("openlink-v2.js", options);	
 		
 		if (options.id && options.password)

@@ -74,9 +74,9 @@ function setupStreamDeck()
     const load = document.getElementById("load");
     load.addEventListener('click', event =>
     {
-        window.streamDeck.writeText(0, "Jappy", "white", "red");
-        window.streamDeck.writeText(1, "Chris", "white", "blue");
-		window.streamDeck.writeText(2, "Oliver", "white", "green");
+        window.streamDeck.writeText(0, "Jappy", "white", "black");
+        window.streamDeck.writeText(1, "Chris", "white", "black");
+		window.streamDeck.writeText(2, "Oliver", "white", "black");
 
     });
 
