@@ -13829,11 +13829,11 @@ const deserializeCommunicationIdentifier = (serializedIdentifier) => {
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-const { CommunicationIdentityClient } = __webpack_require__(1);
-const { CallClient, CallAgent, Renderer, LocalVideoStream} = __webpack_require__(184);
-const { AzureCommunicationTokenCredential }  = __webpack_require__(185);
+export const { CommunicationIdentityClient } = __webpack_require__(1);
+export const { CallClient, CallAgent, Renderer, LocalVideoStream} = __webpack_require__(184);
+export const { AzureCommunicationTokenCredential }  = __webpack_require__(185);
 
-export {CommunicationIdentityClient, CallClient, CallAgent, Renderer, LocalVideoStream, AzureCommunicationTokenCredential}
+
 })();
 
 /******/ })()
