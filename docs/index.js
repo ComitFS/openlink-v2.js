@@ -1,4 +1,4 @@
-import {CommunicationIdentityClient, CallClient, CallAgent} from "./main.js";
+import {CommunicationIdentityClient, CallClient} from "./main.js";
 
 const url = "https://pade.chat:5443/acs/api/openlink/config";	
   
