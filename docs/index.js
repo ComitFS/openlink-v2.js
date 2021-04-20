@@ -1,4 +1,3 @@
-import {CommunicationIdentityClient, CallClient} from "./main.js";
 
 const url = "https://pade.chat:5443/acs/api/openlink/config";	
   
@@ -134,7 +133,7 @@ async function getToken(creds)
   
   if (config.acs_endpoint)
   {
-	const client = new CommunicationIdentityClient(config.acs_endpoint);
+	const client = new openlink_acs.CommunicationIdentityClient(config.acs_endpoint);
 	const scopes = ["voip"];
 	
 	BrowserDetect.init();

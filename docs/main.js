@@ -13815,11 +13815,6 @@ var __webpack_exports__ = {};
 (() => {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "CommunicationIdentityClient": () => (/* reexport safe */ _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__.CommunicationIdentityClient),
-/* harmony export */   "CallClient": () => (/* reexport safe */ _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallClient),
-/* harmony export */   "CallAgent": () => (/* reexport safe */ _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallAgent)
-/* harmony export */ });
 /* harmony import */ var _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(38);
 /* harmony import */ var _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
 /* harmony import */ var _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__);
@@ -13827,7 +13822,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
+window.openlink_acs =  {CommunicationIdentityClient: _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__.CommunicationIdentityClient, CallClient: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallClient, CallAgent: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallAgent};
 })();
 
 /******/ })()
