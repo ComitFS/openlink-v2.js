@@ -13,12 +13,9 @@ export default class Openlink
     {
 		this.options = options;
 		this.url = options?.url || (location.protocol + "//" + location.host);
-		this.source = new EventSource(this.url + "/acs/sse", {withCredentials: true});			
+			
 		console.debug("openlink-v2.js", options);
-	}
-
-    async login()
-    {			
+			
 		if (this.options.id && this.options.password)
 		{
 			this.token = this.getToken(this.options);	  
@@ -40,7 +37,7 @@ export default class Openlink
 		const id = this.options.id || prompt("Username");	
 
 		if (id)
-		{
+		{		
 			let password = await this.webAuthn(id);
 			
 			if (!password)
@@ -86,10 +83,10 @@ export default class Openlink
 			const scopes = ["voip"];
 
 			if (!this.options.profile) this.options.profile = "default";
+			const profile = "acs_profile_" + this.options.profile;			
 			
-			if (!config[this.options.profile])
+			if (!config[profile])
 			{
-				const profile = "acs_profile_" + this.options.profile;
 				const user = await client.createUser();	
 				console.debug("getToken - created user endpoint", user);		
 				config[profile] = user.communicationUserId;	
@@ -99,7 +96,8 @@ export default class Openlink
 			
 			const token = await client.getToken({communicationUserId: config[profile]}, scopes);
 
-			this.config = config;								
+			this.config = config;	
+			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id);	
 			return token;
 		}	
 	}	

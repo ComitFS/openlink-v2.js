@@ -20,13 +20,12 @@ window.addEventListener("load", function()
 	const url = "https://pade.chat:5443";		
 	const profile = (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();
 	
-	openlink.connect({profile, url});
+	await openlink.connect({profile, url});
 	
 	openlink.source.addEventListener('onConnect', event => {
 		console.log("onConnect", event);		
 	});
-	
-	openlink.login();	
+		
 	console.log("Openlink ready", openlink.token);
 });
 	
