@@ -14,7 +14,12 @@ window.addEventListener("unload", function()
 
 window.addEventListener("load", function()
 {
-	setupStreamDeck()
+	setupStreamDeck();
+	setupOpenlink();	
+});
+
+async function setupOpenlink()
+{
 	BrowserDetect.init();
 	
 	const url = "https://pade.chat:5443";		
@@ -26,8 +31,8 @@ window.addEventListener("load", function()
 		console.log("onConnect", event);		
 	});
 		
-	console.log("Openlink ready", openlink.token);
-});
+	console.log("Openlink ready", openlink.token);	
+}
 	
 function setupStreamDeck()
 {
