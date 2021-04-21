@@ -18,7 +18,7 @@ export default class Openlink
 			
 		if (this.options.id && this.options.password)
 		{
-			this.token = this.getToken(this.options);	  
+			await this.getToken(this.options);	  
 			console.debug("Issued token from provided creds:", this.token);	
 			return;
 		}
@@ -29,7 +29,7 @@ export default class Openlink
 		{
 			this.options.id = creds.id;
 			this.options.password = creds.password;
-			this.token = this.getToken();	  
+			await this.getToken();	  
 			console.debug("Issued token from stored creds:", this.token);
 			return;
 		}
@@ -50,7 +50,7 @@ export default class Openlink
 			{
 				this.options.id = id;
 				this.options.password = password;				
-				this.token = getToken();	
+				await this.getToken();	
 				console.debug("Issued token from new creds:", this.token);	
 
 				if (this.token)
@@ -94,11 +94,10 @@ export default class Openlink
 				const response = await fetch(url + "/" + profile, request);
 			}
 			
-			const token = await client.getToken({communicationUserId: config[profile]}, scopes);
-
+			this.token = await client.getToken({communicationUserId: config[profile]}, scopes);
 			this.config = config;	
 			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id);	
-			return token;
+			return;
 		}	
 	}	
 
