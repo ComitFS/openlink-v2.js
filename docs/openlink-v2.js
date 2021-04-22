@@ -94,13 +94,13 @@ export default class Openlink
 				const response = await fetch(url + "/" + profile, request);
 			}
 			
-			this.token = await client.getToken({communicationUserId: config[profile]}, scopes);
-			
-			const request2 = {method: "POST", headers: {authorization}, body: JSON.stringify(this.token) };			
+			const json = await client.getToken({communicationUserId: config[profile]}, scopes);			
+			const request2 = {method: "POST", headers: {authorization}, body: json.token };			
 			const response2 = await fetch(url + "/acs_user_token", request2);
 				
+			this.token = json;
 			this.config = config;	
-			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id);	
+			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id + "&token=" + json.token);	
 			return;
 		}	
 	}	
