@@ -1,10 +1,12 @@
 import Openlink from "./openlink-v2.js";
 import streamDeckXL from "./stream-deck-xl.js";
 import streamDeck from "./stream-deck.js";
+import JabraSpeak410 from "./jabra-speak-410.js";
 
 const stream_deck = new streamDeck();
 const stream_deck_xl = new streamDeckXL();
 const openlink = new Openlink();
+const jabra = new JabraSpeak410();
 
 window.addEventListener("unload", function()
 {
@@ -57,11 +59,13 @@ function setupStreamDeck()
                 }
                 else alert("Stream Deck device not found");
             });
-
+			
+			connectJabra();
         }
         else {
             window.streamDeck.reset();
             window.streamDeck.disconnect();
+			disconnectJabra();
 
             connect.innerHTML = "Connect Device";
             connect.dataset.status = "off";
@@ -93,6 +97,18 @@ function setupStreamDeck()
     setupEventHandler();	
 }
 
+function disconnectJabra()
+{
+	if (jabra) jabra.detach();	
+}
+
+function connectJabra()
+{
+	if (jabra) jabra.attach(event => 
+	{
+		console.debug("jabra event", event);
+	});	
+}
 function getStreamDeck()
 {
     const device = document.getElementById("device");
