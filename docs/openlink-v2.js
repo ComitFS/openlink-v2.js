@@ -15,7 +15,7 @@ export default class Openlink
 		
 		if (request.action == "MakeCall")
 		{
-			this.call = makeCall(request.dialDigits, request.ddi);
+			this.call = this.makeCall(request.dialDigits, request.ddi);
 			this.callId = request.callId;
 		}
 	}
