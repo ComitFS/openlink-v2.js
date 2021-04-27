@@ -38,6 +38,11 @@ async function setupOpenlink()
 		console.log("onAction", event);	
 		openlink.requestAction(event.data);		
 	});	
+	
+	openlink.source.addEventListener('onEvent', event => {
+		console.log("onEvent", event);	
+		openlink.handleEvent(event.data);		
+	});		
 		
 	console.log("Openlink ready", openlink.token);	
 }

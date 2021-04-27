@@ -21,6 +21,12 @@ export default class Openlink
 		}
 	}
 	
+	handleEvent(data)
+	{
+		const event = JSON.parse(data);
+		console.debug("handleEvent", event);		
+	}
+	
 	makeCall(destination, ddi) 
 	{  
 		console.debug("makeCall", destination, ddi);
