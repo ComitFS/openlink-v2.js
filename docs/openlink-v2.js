@@ -8,6 +8,20 @@ export default class Openlink
 		this.options = {};	
 		this.config = {}
     }
+	
+	makeCall(destination, ddi) 
+	{  
+		let call = null;
+	
+		if (destination.startsWith("+"))
+		{
+			call = this.callAgent.startCall([{phoneNumber: destination}], { alternateCallerId: {phoneNumber: '+' + ddi}});	  
+		}
+		else {
+			call = this.callAgent.startCall([{ communicationUserId: destination }],	{});
+		}
+		return call;
+	}	
 
     async connect(options)
     {
@@ -100,7 +114,31 @@ export default class Openlink
 				
 			this.token = json;
 			this.config = config;	
-			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id + "&token=" + json.token);	
+			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id + "&token=" + json.token);
+
+			const tokenCredential = new AzureCommunicationTokenCredential(json.token);
+			this.callClient = new CS.CallClient();
+			this.callAgent = await callClient.createCallAgent(tokenCredential, { displayName: config.name });
+
+			callAgent.on('incomingCall', async event => 
+			{
+				call = await event.incomingCall.accept({});
+				console.debug("incomingCall", call);  
+			});
+
+			callAgent.on('callsUpdated', event => 
+			{
+				console.debug("callsUpdated", event); 
+				
+				event.removed.forEach(removedCall => {
+					console.debug("removedCall", removedCall);
+				})
+				
+				event.added.forEach(addedCall => {
+					console.debug("addedCall", addedCall);					
+				});				
+			})
+  
 			return;
 		}	
 	}	

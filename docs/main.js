@@ -13818,11 +13818,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(38);
 /* harmony import */ var _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
 /* harmony import */ var _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _azure_communication_common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
 
 
 
 
-window.ACS =  {CommunicationIdentityClient: _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__.CommunicationIdentityClient, CallClient: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallClient, CallAgent: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallAgent};
+window.ACS =  {CommunicationIdentityClient: _azure_communication_identity__WEBPACK_IMPORTED_MODULE_1__.CommunicationIdentityClient, CallClient: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallClient, CallAgent: _azure_communication_calling__WEBPACK_IMPORTED_MODULE_0__.CallAgent, AzureCommunicationTokenCredential: _azure_communication_common__WEBPACK_IMPORTED_MODULE_2__.AzureCommunicationTokenCredential};
 })();
 
 /******/ })()
