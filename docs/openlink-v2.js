@@ -149,12 +149,12 @@ export default class Openlink
 				
 				event.removed.forEach(removedCall => {
 					console.debug("removedCall", removedCall);
-					postCallStatus("removed", removedCall);
+					this.postCallStatus("removed", removedCall);
 				})
 				
 				event.added.forEach(addedCall => {
 					console.debug("addedCall", addedCall);	
-					postCallStatus("added", addedCall);
+					this.postCallStatus("added", addedCall);
 				});				
 			})
   
