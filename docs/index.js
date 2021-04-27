@@ -32,6 +32,11 @@ async function setupOpenlink()
 	openlink.source.addEventListener('onConnect', event => {
 		console.log("onConnect", event);		
 	});
+	
+	openlink.source.addEventListener('onAction', event => {
+		console.log("onAction", event);	
+		openlink.requestAction(event);		
+	});	
 		
 	console.log("Openlink ready", openlink.token);	
 }

@@ -8,9 +8,17 @@ export default class Openlink
 		this.options = {};	
 		this.config = {}
     }
+
+	requestAction(action) 
+	{  
+		console.debug("RequestAction", action);
+
+	}
 	
 	makeCall(destination, ddi) 
 	{  
+		console.debug("makeCall", destination, ddi);
+		
 		let call = null;
 	
 		if (destination.startsWith("+"))
@@ -28,7 +36,7 @@ export default class Openlink
 		this.options = options;
 		this.url = options?.url || (location.protocol + "//" + location.host);
 			
-		console.debug("openlink-v2.js", options);
+		console.debug("connect", options);
 			
 		if (this.options.id && this.options.password)
 		{
@@ -120,13 +128,13 @@ export default class Openlink
 			this.callClient = new ACS.CallClient();
 			this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: config.name });
 
-			callAgent.on('incomingCall', async event => 
+			this.callAgent.on('incomingCall', async event => 
 			{
 				call = await event.incomingCall.accept({});
 				console.debug("incomingCall", call);  
 			});
 
-			callAgent.on('callsUpdated', event => 
+			this.callAgent.on('callsUpdated', event => 
 			{
 				console.debug("callsUpdated", event); 
 				
