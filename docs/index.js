@@ -12,6 +12,7 @@ window.addEventListener("unload", function()
 {
     window.eventChannel.close();
     if (window.streamDeck?.device) window.streamDeck.disconnect();
+	disconnectJabra();
 });
 
 window.addEventListener("load", function()
@@ -35,7 +36,7 @@ async function setupOpenlink()
 	
 	openlink.source.addEventListener('onAction', event => {
 		console.log("onAction", event);	
-		openlink.requestAction(event);		
+		openlink.requestAction(event.data);		
 	});	
 		
 	console.log("Openlink ready", openlink.token);	
@@ -104,12 +105,12 @@ function setupStreamDeck()
 
 function disconnectJabra()
 {
-	if (jabra) jabra.detach();	
+	jabra?.detach();	
 }
 
 function connectJabra()
 {
-	if (jabra) jabra.attach(event => 
+	jabra?.attach(event => 
 	{
 		console.debug("jabra event", event);
 	});	

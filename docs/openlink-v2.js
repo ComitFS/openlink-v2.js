@@ -9,10 +9,15 @@ export default class Openlink
 		this.config = {}
     }
 
-	requestAction(action) 
+	requestAction(request) 
 	{  
-		console.debug("RequestAction", action);
-
+		console.debug("RequestAction", request);
+		
+		if (request.action == "MakeCall")
+		{
+			this.call = makeCall(request.dialDigits, request.ddi);
+			this.callId = request.callId;
+		}
 	}
 	
 	makeCall(destination, ddi) 
@@ -23,7 +28,10 @@ export default class Openlink
 	
 		if (destination.startsWith("+"))
 		{
-			call = this.callAgent.startCall([{phoneNumber: destination}], { alternateCallerId: {phoneNumber: '+' + ddi}});	  
+			let phoneNumber = ddi;
+			if (phoneNumber.indexOf("+") == -1) phoneNumber = "+" + phoneNumber;
+			
+			call = this.callAgent.startCall([{phoneNumber: destination}], { alternateCallerId: {phoneNumber}});	  
 		}
 		else {
 			call = this.callAgent.startCall([{ communicationUserId: destination }],	{});
