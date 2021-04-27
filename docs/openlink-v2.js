@@ -9,18 +9,19 @@ export default class Openlink
 		this.config = {}
     }
 
-	requestAction(request) 
-	{  		
+	requestAction(data) 
+	{  
+		const request = JSON.parse(data);
+		console.debug("RequestAction", request);
+		
 		if (request.action == "MakeCall")
 		{
-			console.debug("RequestAction before", request);			
 			this.call = this.makeCall(request.dialDigits, request.ddi);
-			console.debug("RequestAction after", request);				
 			this.callId = request.callId;
 		}
 	}
 	
-	async makeCall(destination, ddi) 
+	makeCall(destination, ddi) 
 	{  
 		console.debug("makeCall", destination, ddi);
 		
