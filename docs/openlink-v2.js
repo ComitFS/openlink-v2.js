@@ -139,7 +139,7 @@ export default class Openlink
 
 			this.callAgent.on('incomingCall', async event => 
 			{
-				call = await event.incomingCall.accept({});
+				//this.call = await event.incomingCall.accept({});
 				console.debug("incomingCall", call);  
 			});
 
@@ -149,16 +149,28 @@ export default class Openlink
 				
 				event.removed.forEach(removedCall => {
 					console.debug("removedCall", removedCall);
+					postCallStatus("removed", removedCall);
 				})
 				
 				event.added.forEach(addedCall => {
-					console.debug("addedCall", addedCall);					
+					console.debug("addedCall", addedCall);	
+					postCallStatus("added", addedCall);
 				});				
 			})
   
 			return;
 		}	
 	}	
+	
+	async postCallStatus(status, call)
+	{
+		const payload = {status, id: this.callId, _id: call._id, _direction: call._direction, _state: call._state};
+		console.debug("postCallStatus", status, call, payload);
+		
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/callstatus";			
+		const response = await fetch(url, {method: "POST", headers: {authorization}, body: JSON.stringify(payload)});		
+	}
 
 	async webAuthn(id)
 	{
