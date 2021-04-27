@@ -116,8 +116,8 @@ export default class Openlink
 			this.config = config;	
 			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id + "&token=" + json.token);
 
-			const tokenCredential = new CS.AzureCommunicationTokenCredential(json.token);
-			this.callClient = new CS.CallClient();
+			const tokenCredential = new ACS.AzureCommunicationTokenCredential(json.token);
+			this.callClient = new ACS.CallClient();
 			this.callAgent = await callClient.createCallAgent(tokenCredential, { displayName: config.name });
 
 			callAgent.on('incomingCall', async event => 
