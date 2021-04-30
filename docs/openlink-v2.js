@@ -16,34 +16,38 @@ export default class Openlink
 		
 		if (request.action == "MakeCall")
 		{
-			this.call = this.makeCall(request.dialDigits, request.ddi);
-			this.callId = request.callId;
+			this.callId = request.callId;			
+			this.makeCall(request.dialDigits, request.ddi);
 		}
+		else
+
+		if (request.action == "ClearConnection" || request.action == "ClearCall")
+		{
+			if (this.call) this.call.hangUp();
+		}			
 	}
 	
 	handleEvent(data)
 	{
 		const event = JSON.parse(data);
-		console.debug("handleEvent", event);		
+		const xml = txml.simplify(txml.parse(event.xml));
+		console.debug("handleEvent", xml);		
 	}
 	
-	makeCall(destination, ddi) 
+	async makeCall(destination, ddi) 
 	{  
 		console.debug("makeCall", destination, ddi);
-		
-		let call = null;
 	
 		if (destination.startsWith("+"))
 		{
 			let phoneNumber = ddi;
 			if (phoneNumber.indexOf("+") == -1) phoneNumber = "+" + phoneNumber;
 			
-			call = this.callAgent.startCall([{phoneNumber: destination}], { alternateCallerId: {phoneNumber}});	  
+			this.call = await this.callAgent.startCall([{phoneNumber: destination}], { alternateCallerId: {phoneNumber}});	  
 		}
 		else {
-			call = this.callAgent.startCall([{ communicationUserId: destination }],	{});
+			this.call = await this.callAgent.startCall([{ communicationUserId: destination }],	{});
 		}
-		return call;
 	}	
 
     async connect(options)
@@ -190,7 +194,7 @@ export default class Openlink
 			return null;
 		}
 			
-		params.publicKeyCredentialRequestOptions.allowCredentials.forEach(function (listItem) 
+		params.publicKeyCredentialRequestOptions.allowCredentials.forEach(listItem => 
 		{
 			listItem.id = this.bufferDecode(listItem.id)
 		});
@@ -230,7 +234,7 @@ export default class Openlink
 			
 		if (credentialCreationOptions.excludeCredentials) 
 		{
-			credentialCreationOptions.excludeCredentials.forEach(function (listItem) 
+			credentialCreationOptions.excludeCredentials.forEach(listItem => 
 			{
 				listItem.id = this.bufferDecode(listItem.id)
 			});
