@@ -17,7 +17,7 @@ export default class Openlink
 		if (request.action == "MakeCall")
 		{
 			this.callId = request.callId;			
-			this.makeCall(request.dialDigits, request.ddi);
+			this.requestMakeCall(request.dialDigits, request.ddi);
 		}
 		else
 
@@ -34,9 +34,9 @@ export default class Openlink
 		console.debug("handleEvent", xml);		
 	}
 	
-	async makeCall(destination, ddi) 
+	async requestMakeCall(destination, ddi) 
 	{  
-		console.debug("makeCall", destination, ddi);
+		console.debug("requestMakeCall", destination, ddi);
 	
 		if (destination.startsWith("+"))
 		{
@@ -171,6 +171,20 @@ export default class Openlink
 			return;
 		}	
 	}	
+	
+	async getFeatures()
+	{
+		console.debug("getFeatures", this.options);		
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/profiles/" + this.options.id + "/features";
+		const response = await fetch(url, {method: "GET", headers: {authorization}});
+		return response.json();	
+	}
+
+	async makeCall(destination)
+	{
+		console.debug("makeCall", destination);			
+	}
 	
 	async postCallStatus(status, call)
 	{

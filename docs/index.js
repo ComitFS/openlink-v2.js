@@ -7,6 +7,7 @@ const stream_deck = new streamDeck();
 const stream_deck_xl = new streamDeckXL();
 const openlink = new Openlink();
 const jabra = new JabraSpeak410();
+const buttons = [];
 
 window.addEventListener("unload", function()
 {
@@ -25,7 +26,7 @@ async function setupOpenlink()
 {
 	BrowserDetect.init();
 	
-	const url = "https://pade.chat:5443";		
+	const url = "https://desktop-545pc5b:7443";		
 	const profile = (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();
 	
 	await openlink.connect({profile, url});
@@ -97,12 +98,17 @@ function setupStreamDeck()
     });
 
     const load = document.getElementById("load");
-    load.addEventListener('click', event =>
+    load.addEventListener('click', async event =>
     {
-        window.streamDeck.writeText(0, "Jappy", "white", "black");
-        window.streamDeck.writeText(1, "Chris", "white", "black");
-		window.streamDeck.writeText(2, "Oliver", "white", "black");
-
+		let i = 0;
+		const json = await openlink.getFeatures();
+		console.debug("load telephone features", json.features);
+		
+		json.features.forEach(feature =>
+		{
+			buttons[i] = feature;
+			window.streamDeck.writeText(i++, feature.id, "white", "black");			
+		});
     });
 
     setupEventHandler();	
@@ -136,11 +142,20 @@ function setupEventHandler()
         if (event.data.event == "keys")
         {
             const keys = event.data.keys;
-            console.debug("key press", keys);
 
             if (keys[0]?.down) console.log("key 0 pressed");
             if (keys[1]?.down) console.log("key 1 pressed");
             if (keys[2]?.down) console.log("key 2 pressed");
+			
+			for (let i=0; i<32; i++)
+			{
+				if (keys[i]?.down && buttons[i])
+				{
+					console.debug("key press", i, buttons[i]);	
+					
+					if (buttons[i].type == "SpeedDial") openlink.makeCall(buttons[i].label);
+				}					
+			}
         }
         else
 
