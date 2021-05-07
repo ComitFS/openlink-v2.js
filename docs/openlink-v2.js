@@ -7,6 +7,7 @@ export default class Openlink
 		this.url = null;
 		this.options = {};	
 		this.config = {}
+		this.calls = {}		
     }
 
 	requestAction(data) 
@@ -16,38 +17,38 @@ export default class Openlink
 		
 		if (request.action == "MakeCall")
 		{
-			this.callId = request.callId;			
-			this.requestMakeCall(request.dialDigits, request.ddi);
+			this.request = request;
+			this.calls[request.callId] = request;			
+			this.requestMakeCall(request);
 		}
 		else
 
 		if (request.action == "ClearConnection" || request.action == "ClearCall")
 		{
-			if (this.call) this.call.hangUp();
+			if (this.calls[request.callId]?.call)
+			{
+				this.calls[request.callId].call.hangUp();
+				delete this.calls[request.callId];
+			}
 		}			
 	}
 	
-	handleEvent(data)
-	{
-		const event = JSON.parse(data);
-		const xml = txml.simplify(txml.parse(event.xml));
-		console.debug("handleEvent", xml);		
-	}
-	
-	async requestMakeCall(destination, ddi) 
+	async requestMakeCall(request) 
 	{  
-		console.debug("requestMakeCall", destination, ddi);
+		console.debug("requestMakeCall", request.dialDigits, request.ddi);
 	
-		if (destination.startsWith("+"))
+		if (request.dialDigits.startsWith("+"))
 		{
-			let phoneNumber = ddi;
+			let phoneNumber = request.ddi;
 			if (phoneNumber.indexOf("+") == -1) phoneNumber = "+" + phoneNumber;
-			
-			this.call = await this.callAgent.startCall([{phoneNumber: destination}], { alternateCallerId: {phoneNumber}});	  
+
+			this.call = await this.callAgent.startCall([{phoneNumber: request.dialDigits}], { alternateCallerId: {phoneNumber}});	 			
 		}
 		else {
-			this.call = await this.callAgent.startCall([{ communicationUserId: destination }],	{});
+			this.call = await this.callAgent.startCall([{ communicationUserId: request.dialDigits }],	{});
 		}
+	
+		this.calls[request.callId].call = this.call;		
 	}	
 
     async connect(options)
@@ -164,7 +165,7 @@ export default class Openlink
 				
 				event.added.forEach(addedCall => {
 					console.debug("addedCall", addedCall);	
-					this.postCallStatus("added", addedCall);
+					this.postCallStatus("added", addedCall);				
 				});				
 			})
   
@@ -183,14 +184,19 @@ export default class Openlink
 
 	async makeCall(destination)
 	{
-		console.debug("makeCall", destination);			
+		console.debug("makeCall", destination);	
+
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
+		const response = await fetch(url, {method: "PUT", headers: {authorization}});
+		const callstatus = await response.json();	
+		return callstatus;	
 	}
 	
 	async postCallStatus(status, call)
 	{
-		const payload = {status, id: this.callId, _id: call._id, _direction: call._direction, _state: call._state};
-		console.debug("postCallStatus", status, call, payload);
-		
+		console.debug("postCallStatus", status, call, this.request);		
+		const payload = {status, id: this.request.callId, _id: call._id, _direction: call._direction, _state: call._state};		
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/callstatus";			
 		const response = await fetch(url, {method: "POST", headers: {authorization}, body: JSON.stringify(payload)});		

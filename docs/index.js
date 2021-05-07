@@ -1,13 +1,14 @@
-import Openlink from "./openlink-v2.js";
-import streamDeckXL from "./stream-deck-xl.js";
-import streamDeck from "./stream-deck.js";
-import JabraSpeak410 from "./jabra-speak-410.js";
+import Openlink 		from "./openlink-v2.js";
+import streamDeckXL 	from "./stream-deck-xl.js";
+import streamDeck 		from "./stream-deck.js";
+import JabraSpeak410 	from "./jabra-speak-410.js";
+import JabraSpeak510 	from "./jabra-speak-510.js";
 
 const stream_deck = new streamDeck();
 const stream_deck_xl = new streamDeckXL();
 const openlink = new Openlink();
-const jabra = new JabraSpeak410();
-const buttons = [];
+const data = {buttons: [], jabra: null};
+
 
 window.addEventListener("unload", function()
 {
@@ -41,8 +42,20 @@ async function setupOpenlink()
 	});	
 	
 	openlink.source.addEventListener('onEvent', event => {
-		console.log("onEvent", event);	
-		openlink.handleEvent(event.data);		
+		const data = JSON.parse(event.data);
+		console.log("onEvent", data);		
+		const xml = txml.simplify(txml.parse(data.xml));	
+		
+		if (xml.callstatus)
+		{
+			let calls = xml.callstatus.call;			
+			if (!Array.isArray(calls)) calls = [calls];
+			
+			calls.forEach(call =>
+			{
+				handleCallStatus(call);				
+			});			
+		}
 	});		
 		
 	console.log("Openlink ready", openlink.token);	
@@ -106,7 +119,8 @@ function setupStreamDeck()
 		
 		json.features.forEach(feature =>
 		{
-			buttons[i] = feature;
+			feature.key = i;
+			data.buttons[i] = feature;
 			window.streamDeck.writeText(i++, feature.id, "white", "black");			
 		});
     });
@@ -116,12 +130,15 @@ function setupStreamDeck()
 
 function disconnectJabra()
 {
-	jabra?.detach();	
+	data.jabra?.detach();	
 }
 
 function connectJabra()
 {
-	jabra?.attach(event => 
+    const speaker = document.getElementById("speaker");	
+	data.jabra = speaker.value == "jabra-410" ? new JabraSpeak410() : new JabraSpeak510();	
+	
+	data.jabra.attach(event => 
 	{
 		console.debug("jabra event", event);
 	});	
@@ -142,18 +159,18 @@ function setupEventHandler()
         if (event.data.event == "keys")
         {
             const keys = event.data.keys;
-
-            if (keys[0]?.down) console.log("key 0 pressed");
-            if (keys[1]?.down) console.log("key 1 pressed");
-            if (keys[2]?.down) console.log("key 2 pressed");
 			
 			for (let i=0; i<32; i++)
 			{
-				if (keys[i]?.down && buttons[i])
+				if (keys[i]?.down && data.buttons[i])
 				{
-					console.debug("key press", i, buttons[i]);	
+					console.debug("key press", i, data.buttons[i]);	
 					
-					if (buttons[i].type == "SpeedDial") openlink.makeCall(buttons[i].label);
+					if (data.buttons[i].type == "SpeedDial")
+					{
+						const callstatus = openlink.makeCall(data.buttons[i].label);
+						console.debug("speed dial", callstatus);
+					}
 				}					
 			}
         }
@@ -164,6 +181,45 @@ function setupEventHandler()
             window.streamDeck.handleScreen(event);
         }
     });
+}
+
+function handleCallStatus(call)
+{	
+	const button = findButton(call);	
+	console.debug("handleCallStatus", call, button);	
+			
+	if (openlink.calls[call.id])
+	{
+		if (call.state == "CallEstablished")
+		{		
+			if (button) window.streamDeck.writeText(button.key, button.id, "white", "brown");	
+		}
+		else
+			
+		if (call.state == "CallEstablished")
+		{
+			data?.jabra.connect();		
+			if (button) window.streamDeck.writeText(button.key, button.id, "white", "green");	
+		}
+		else
+			
+		if (call.state == "ConnectionCleared")
+		{
+			data?.jabra.clear();
+			if (button) window.streamDeck.writeText(button.key, button.id, "white", "black");			
+		}		
+	}
+
+}
+
+function findButton(call)
+{	
+	for (let i=0; i<data.buttons.length; i++)
+	{
+		if (call.called?.number == data.buttons[i].label) return data.buttons[i];
+	};
+	
+	return null;
 }
 
 const BrowserDetect = {
