@@ -45,7 +45,7 @@ export default class Openlink
 			this.call = await this.callAgent.startCall([{phoneNumber: request.dialDigits}], { alternateCallerId: {phoneNumber}});	 			
 		}
 		else {
-			this.call = await this.callAgent.startCall([{ communicationUserId: request.ddi }]);
+			this.call = await this.callAgent.startCall([{ communicationUserId: request.ddi }], {});
 		}
 	
 		this.calls[request.callId].call = this.call;		
@@ -177,7 +177,7 @@ export default class Openlink
 				console.debug("callsUpdated", event); 
 				
 				event.removed.forEach(removedCall => {
-					console.debug("removedCall", removedCall);
+					console.debug("removedCall", removedCall.callEndReason);
 					this.postCallStatus("removed", removedCall);
 				})
 				

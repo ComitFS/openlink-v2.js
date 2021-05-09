@@ -25,12 +25,9 @@ window.addEventListener("load", function()
 
 async function setupOpenlink()
 {
-	BrowserDetect.init();
-	
-	const url = "https://desktop-545pc5b:7443";		
-	const profile = (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();
-	
-	await openlink.connect({profile, url});
+	BrowserDetect.init();		
+	const profile = (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();	
+	await openlink.connect({profile, url: URL});
 	
 	openlink.source.addEventListener('onConnect', event => {
 		console.log("onConnect", event);		
