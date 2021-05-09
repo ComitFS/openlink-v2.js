@@ -27,7 +27,7 @@ async function setupOpenlink()
 {
 	BrowserDetect.init();
 	
-	const url = "https://desktop-545pc5b:7443";		
+	const url = "https://pade.chat:5443";		
 	const profile = (BrowserDetect.browser + "_" + BrowserDetect.OS).toLowerCase();
 	
 	await openlink.connect({profile, url});
