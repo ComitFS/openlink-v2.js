@@ -9,7 +9,6 @@ const stream_deck_xl = new streamDeckXL();
 const openlink = new Openlink();
 const data = {buttons: [], jabra: null};
 
-
 window.addEventListener("unload", function()
 {
     window.eventChannel.close();
