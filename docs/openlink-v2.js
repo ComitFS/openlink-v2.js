@@ -45,7 +45,7 @@ export default class Openlink
 			this.call = await this.callAgent.startCall([{phoneNumber: request.dialDigits}], { alternateCallerId: {phoneNumber}});	 			
 		}
 		else {
-			this.call = await this.callAgent.startCall([{ communicationUserId: request.dialDigits }],	{});
+			this.call = await this.callAgent.startCall([{ communicationUserId: request.ddi }]);
 		}
 	
 		this.calls[request.callId].call = this.call;		
@@ -150,8 +150,26 @@ export default class Openlink
 
 			this.callAgent.on('incomingCall', async event => 
 			{
+				console.debug("incomingCall", event.incomingCall.callerInfo); 
+
+				event.incomingCall.on('callEnded', endedCall => {
+					console.log("endedCall", endedCall);
+				});
+				
+				this.postCallStatus("notified", event.incomingCall);				
+				
 				//this.call = await event.incomingCall.accept({});
-				console.debug("incomingCall", call);  
+				//Get incoming call id
+				//var incomingCallId = incomingCall.id
+				// Get information about caller
+				//var callerInfo = incomingCall.callerInfo
+				// Accept the call
+				//var call = await incomingCall.accept();
+				// Reject the call
+				//incomingCall.reject();
+				// Subscribe to callEnded event and get the call end reason
+				// callEndReason is also a property of IncomingCall
+				//var callEndReason = incomingCall.callEndReason; 
 			});
 
 			this.callAgent.on('callsUpdated', event => 
@@ -195,11 +213,21 @@ export default class Openlink
 	
 	async postCallStatus(status, call)
 	{
-		console.debug("postCallStatus", status, call, this.request);		
-		const payload = {status, id: this.request.callId, _id: call._id, _direction: call._direction, _state: call._state};		
-		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
-		const url = this.url + "/acs/api/openlink/callstatus";			
-		const response = await fetch(url, {method: "POST", headers: {authorization}, body: JSON.stringify(payload)});		
+		console.debug("postCallStatus", status, call, this.request);
+		
+		if (status == "added" || status == "removed")
+		{
+			const payload = {status, id: this.request.callId, _id: call._id, _direction: call._direction, _state: call._state};		
+			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+			const url = this.url + "/acs/api/openlink/callstatus";			
+			const response = await fetch(url, {method: "POST", headers: {authorization}, body: JSON.stringify(payload)});	
+		}		
+		else
+			
+		if (status == "notified")
+		{	
+
+		}	
 	}
 
 	async webAuthn(id)

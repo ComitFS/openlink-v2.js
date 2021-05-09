@@ -190,22 +190,22 @@ function handleCallStatus(call)
 			
 	if (openlink.calls[call.id])
 	{
-		if (call.state == "CallEstablished")
+		if (call.state == "CallOriginated")
 		{		
-			if (button) window.streamDeck.writeText(button.key, button.id, "white", "brown");	
+			if (button) window.streamDeck.writeText(button.key, button.id, "white", "orange");	
 		}
 		else
 			
 		if (call.state == "CallEstablished")
 		{
-			data?.jabra.connect();		
+			data?.jabra?.connect();		
 			if (button) window.streamDeck.writeText(button.key, button.id, "white", "green");	
 		}
 		else
 			
 		if (call.state == "ConnectionCleared")
 		{
-			data?.jabra.clear();
+			data?.jabra?.clear();
 			if (button) window.streamDeck.writeText(button.key, button.id, "white", "black");			
 		}		
 	}
