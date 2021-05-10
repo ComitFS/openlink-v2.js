@@ -34,7 +34,7 @@ async function setupOpenlink()
 	
 	openlink.source.addEventListener('onAction', event => {
 		console.log("onAction", event);	
-		openlink.requestAction(event.data);		
+		openlink.executeAction(event.data);		
 	});	
 	
 	openlink.source.addEventListener('onEvent', event => {
@@ -113,7 +113,7 @@ function setupStreamDeck()
 		const json = await openlink.getFeatures();
 		console.debug("load telephone features", json.features);
 		
-		json.features.forEach(feature =>
+		if (json.features) json.features.forEach(feature =>
 		{
 			feature.key = i;
 			data.buttons[i] = feature;
@@ -158,12 +158,17 @@ function setupEventHandler()
 			
 			for (let i=0; i<32; i++)
 			{
-				if (keys[i]?.down && data.buttons[i])
+				if (keys[i]?.down && data.buttons[i] && data.buttons[i].type == "SpeedDial")
 				{
-					console.debug("key press", i, data.buttons[i]);	
-					
-					if (data.buttons[i].type == "SpeedDial")
+					const call = data.buttons[i].call;
+					console.debug("key press", i, data.buttons[i], call);	
+
+					if (call)
 					{
+						if (call.state == "CallDelivered") 		openlink.requestAction("AnswerCall", call);
+						if (call.state == "CallEstablished") 	openlink.requestAction("ClearConnection", call);							
+					}						
+					else {				
 						const callstatus = openlink.makeCall(data.buttons[i].label);
 						console.debug("speed dial", callstatus);
 					}
@@ -194,16 +199,39 @@ function handleCallStatus(call)
 			
 		if (call.state == "CallEstablished")
 		{
-			data?.jabra?.connect();		
-			if (button) window.streamDeck.writeText(button.key, button.id, "white", "green");	
+			data?.jabra?.connect();	
+			
+			if (button)
+			{
+				button.call = call;
+				window.streamDeck.writeText(button.key, button.id, "white", "green");	
+			}
 		}
 		else
 			
 		if (call.state == "ConnectionCleared")
 		{
 			data?.jabra?.clear();
-			if (button) window.streamDeck.writeText(button.key, button.id, "white", "black");			
-		}		
+			
+			if (button)
+			{				
+				window.streamDeck.writeText(button.key, button.id, "white", "black");	
+				delete button.call;
+				delete openlink.calls[call.id];
+			}
+		}	
+		else
+			
+		if (call.state == "CallDelivered")
+		{
+			data?.jabra?.ring();
+			
+			if (button)
+			{
+				button.call = call;				
+				window.streamDeck.writeText(button.key, button.id, "white", "red");			
+			}
+		}			
 	}
 
 }
@@ -212,7 +240,10 @@ function findButton(call)
 {	
 	for (let i=0; i<data.buttons.length; i++)
 	{
-		if (call.called?.number == data.buttons[i].label) return data.buttons[i];
+		if (call.called?.number == data.buttons[i].label || call.called?.name == data.buttons[i].label)
+		{
+			return data.buttons[i];
+		}
 	};
 	
 	return null;

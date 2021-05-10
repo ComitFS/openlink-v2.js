@@ -10,27 +10,35 @@ export default class Openlink
 		this.calls = {}		
     }
 
-	requestAction(data) 
+	executeAction(data) 
 	{  
 		const request = JSON.parse(data);
-		console.debug("RequestAction", request);
+		console.debug("executeAction", request);
 		
 		if (request.action == "MakeCall")
 		{
-			this.request = request;
-			this.calls[request.callId] = request;			
+			this.request = request;			
 			this.requestMakeCall(request);
 		}
 		else
 
 		if (request.action == "ClearConnection" || request.action == "ClearCall")
 		{
-			if (this.calls[request.callId]?.call)
+			if (this.calls[request.callId])
 			{
-				this.calls[request.callId].call.hangUp();
-				delete this.calls[request.callId];
+				this.calls[request.callId].hangUp();
 			}
-		}			
+		}	
+		else
+
+		if (request.action == "AnswerCall")
+		{
+			if (this.calls[request.callId])
+			{
+				this.calls[request.callId].accept();
+			}
+		}
+		
 	}
 	
 	async requestMakeCall(request) 
@@ -48,7 +56,7 @@ export default class Openlink
 			this.call = await this.callAgent.startCall([{ communicationUserId: request.ddi }], {});
 		}
 	
-		this.calls[request.callId].call = this.call;		
+		this.calls[request.callId] = this.call;		
 	}	
 
     async connect(options)
@@ -153,23 +161,11 @@ export default class Openlink
 				console.debug("incomingCall", event.incomingCall.callerInfo); 
 
 				event.incomingCall.on('callEnded', endedCall => {
-					console.log("endedCall", endedCall);
+					console.log("endedCall", endedCall, event.incomingCall);
 				});
-				
-				this.postCallStatus("notified", event.incomingCall);				
-				
-				//this.call = await event.incomingCall.accept({});
-				//Get incoming call id
-				//var incomingCallId = incomingCall.id
-				// Get information about caller
-				//var callerInfo = incomingCall.callerInfo
-				// Accept the call
-				//var call = await incomingCall.accept();
-				// Reject the call
-				//incomingCall.reject();
-				// Subscribe to callEnded event and get the call end reason
-				// callEndReason is also a property of IncomingCall
-				//var callEndReason = incomingCall.callEndReason; 
+
+				this.calls[event.incomingCall._callInternal._id] = event.incomingCall;					
+				this.postCallStatus("notified", event.incomingCall._callInternal);				
 			});
 
 			this.callAgent.on('callsUpdated', event => 
@@ -177,12 +173,13 @@ export default class Openlink
 				console.debug("callsUpdated", event); 
 				
 				event.removed.forEach(removedCall => {
-					console.debug("removedCall", removedCall.callEndReason);
+					console.debug("removedCall", removedCall.callEndReason, removedCall.callerInfo);
 					this.postCallStatus("removed", removedCall);
 				})
 				
 				event.added.forEach(addedCall => {
-					console.debug("addedCall", addedCall);	
+					console.debug("addedCall", addedCall, addedCall.callerInfo);	
+					this.calls[addedCall._id] = addedCall;	
 					this.postCallStatus("added", addedCall);				
 				});				
 			})
@@ -211,23 +208,35 @@ export default class Openlink
 		return callstatus;	
 	}
 	
+	async requestAction(action, call, value)
+	{
+		console.debug("requestAction", action, call);	
+
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/requestaction/" + call.interest + "/" + action + "/" + call.id;
+		const response = await fetch(url, {method: "PUT", headers: {authorization}, body: value});
+		const callstatus = await response.json();	
+		return callstatus;	
+	}
+	
 	async postCallStatus(status, call)
 	{
 		console.debug("postCallStatus", status, call, this.request);
 		
-		if (status == "added" || status == "removed")
+		if (status == "added" || status == "removed" || status == "notified")
 		{
-			const payload = {status, id: this.request.callId, _id: call._id, _direction: call._direction, _state: call._state};		
+			const payload = {
+				status, 
+				id: this.request?.callId || call._id,
+				_id: call._id, 
+				_direction: call._direction,
+				_state: call._state,
+				callerInfo: call.callerInfo
+			};		
 			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 			const url = this.url + "/acs/api/openlink/callstatus";			
 			const response = await fetch(url, {method: "POST", headers: {authorization}, body: JSON.stringify(payload)});	
-		}		
-		else
-			
-		if (status == "notified")
-		{	
-
-		}	
+		}			
 	}
 
 	async webAuthn(id)
