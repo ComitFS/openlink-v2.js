@@ -29,17 +29,17 @@ async function setupOpenlink()
 	await openlink.connect({profile, url: URL});
 	
 	openlink.source.addEventListener('onConnect', event => {
-		console.log("onConnect", event);		
+		console.debug("onConnect", event);		
 	});
 	
 	openlink.source.addEventListener('onAction', event => {
-		console.log("onAction", event);	
+		console.debug("onAction", event);	
 		openlink.executeAction(event.data);		
 	});	
 	
 	openlink.source.addEventListener('onEvent', event => {
 		const data = JSON.parse(event.data);
-		console.log("onEvent", data);		
+		console.debug("onEvent", data);		
 		const xml = txml.simplify(txml.parse(data.xml));	
 		
 		if (xml.callstatus)
@@ -54,7 +54,58 @@ async function setupOpenlink()
 		}
 	});		
 		
-	console.log("Openlink ready", openlink.token);	
+	console.debug("Openlink ready", openlink.token);	
+}
+
+function handleCallStatus(call)
+{	
+	const button = findButton(call);	
+	console.debug("handleCallStatus", call, button);	
+			
+	if (button)
+	{
+		if (call.state == "CallOriginated")
+		{		
+			window.streamDeck.writeText(button.key, button.id, "white", "orange");	
+		}
+		else
+			
+		if (call.state == "CallEstablished")
+		{
+			data?.jabra?.connect();				
+			button.call = call;
+			window.streamDeck.writeText(button.key, button.id, "white", "green");	
+		}
+		else
+			
+		if (call.state == "ConnectionCleared" || call.state == "CallMissed")
+		{
+			data?.jabra?.clear();				
+			window.streamDeck.writeText(button.key, button.id, "white", "black");	
+			delete button.call;
+		}	
+		else
+			
+		if (call.state == "CallDelivered")
+		{
+			data?.jabra?.ring();
+			button.call = call;				
+			window.streamDeck.writeText(button.key, button.id, "white", "red");			
+		}			
+	}
+}
+
+function findButton(call)
+{	
+	for (let i=0; i<data.buttons.length; i++)
+	{
+		if (call.called?.number == data.buttons[i].label || call.called?.name == data.buttons[i].label)
+		{
+			return data.buttons[i];
+		}
+	};
+	
+	return null;
 }
 	
 function setupStreamDeck()
@@ -110,7 +161,17 @@ function setupStreamDeck()
     load.addEventListener('click', async event =>
     {
 		let i = 0;
-		const json = await openlink.getFeatures();
+		let json = await openlink.getInterests();
+		console.debug("load telephone interests", json.interests);
+		
+		if (json.interests) json.interests.forEach(interest =>
+		{
+			interest.key = i;
+			data.buttons[i] = interest;
+			window.streamDeck.writeText(i++, interest.id, "white", "black");			
+		});
+		
+		json = await openlink.getFeatures();
 		console.debug("load telephone features", json.features);
 		
 		if (json.features) json.features.forEach(feature =>
@@ -118,7 +179,7 @@ function setupStreamDeck()
 			feature.key = i;
 			data.buttons[i] = feature;
 			window.streamDeck.writeText(i++, feature.id, "white", "black");			
-		});
+		});		
     });
 
     setupEventHandler();	
@@ -158,7 +219,7 @@ function setupEventHandler()
 			
 			for (let i=0; i<32; i++)
 			{
-				if (keys[i]?.down && data.buttons[i] && data.buttons[i].type == "SpeedDial")
+				if (keys[i]?.down && data.buttons[i])
 				{
 					const call = data.buttons[i].call;
 					console.debug("key press", i, data.buttons[i], call);	
@@ -168,9 +229,18 @@ function setupEventHandler()
 						if (call.state == "CallDelivered") 		openlink.requestAction("AnswerCall", call);
 						if (call.state == "CallEstablished") 	openlink.requestAction("ClearConnection", call);							
 					}						
-					else {				
-						const callstatus = openlink.makeCall(data.buttons[i].label);
-						console.debug("speed dial", callstatus);
+					else {	
+						if (data.buttons[i].type == "SpeedDial")
+						{
+							openlink.makeCall(data.buttons[i].label);
+						}
+						else
+							
+						if (data.buttons[i].type == "L")
+						{
+							openlink.makeCallDirectLine(data.buttons[i].id);
+						}						
+						
 					}
 				}					
 			}
@@ -184,70 +254,6 @@ function setupEventHandler()
     });
 }
 
-function handleCallStatus(call)
-{	
-	const button = findButton(call);	
-	console.debug("handleCallStatus", call, button);	
-			
-	if (openlink.calls[call.id])
-	{
-		if (call.state == "CallOriginated")
-		{		
-			if (button) window.streamDeck.writeText(button.key, button.id, "white", "orange");	
-		}
-		else
-			
-		if (call.state == "CallEstablished")
-		{
-			data?.jabra?.connect();	
-			
-			if (button)
-			{
-				button.call = call;
-				window.streamDeck.writeText(button.key, button.id, "white", "green");	
-			}
-		}
-		else
-			
-		if (call.state == "ConnectionCleared")
-		{
-			data?.jabra?.clear();
-			
-			if (button)
-			{				
-				window.streamDeck.writeText(button.key, button.id, "white", "black");	
-				delete button.call;
-				delete openlink.calls[call.id];
-			}
-		}	
-		else
-			
-		if (call.state == "CallDelivered")
-		{
-			data?.jabra?.ring();
-			
-			if (button)
-			{
-				button.call = call;				
-				window.streamDeck.writeText(button.key, button.id, "white", "red");			
-			}
-		}			
-	}
-
-}
-
-function findButton(call)
-{	
-	for (let i=0; i<data.buttons.length; i++)
-	{
-		if (call.called?.number == data.buttons[i].label || call.called?.name == data.buttons[i].label)
-		{
-			return data.buttons[i];
-		}
-	};
-	
-	return null;
-}
 
 const BrowserDetect = {
 	init: function () {
