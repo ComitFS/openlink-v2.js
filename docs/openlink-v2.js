@@ -9,6 +9,7 @@ export default class Openlink
 		this.options = {};	
 		this.config = {}
 		this.calls = {}		
+		this.missed = {}			
     }
 
 	executeAction(data) 
@@ -165,10 +166,13 @@ export default class Openlink
 
 				call.on('callEnded', endedCall => {
 					console.debug("endedCall", endedCall, call);
+					this.postCallStatus(call._callInternal);	
+					delete this.calls[call._callInternal._id];	
 				});				
 
-				this.calls[call._callInternal._id] = call;					
-				this.postCallStatus(true, call._callInternal);				
+				this.calls[call._callInternal._id] = call;	
+				this.postCallStatus(call._callInternal);
+				this.missed[call._callInternal._id] = true;	
 			});
 
 			this.callAgent.on('callsUpdated', event => 
@@ -177,16 +181,17 @@ export default class Openlink
 				
 				event.removed.forEach(removedCall => {
 					console.debug("removedCall", removedCall.callEndReason, removedCall.callerInfo);
-					delete this.calls[removedCall._id]				
+					delete this.calls[removedCall._id];				
 				})
 				
 				event.added.forEach(addedCall => {
 					console.debug("addedCall", addedCall, addedCall.callerInfo);	
 					this.calls[addedCall._id] = addedCall;	
+					this.missed[addedCall._id] = false;						
 
 					addedCall.on('stateChanged', () => {
 						console.debug("addedCall state", addedCall.state);	
-						this.postCallStatus(false, addedCall);						
+						this.postCallStatus(addedCall);						
 						if (addedCall.state == "Disconnected") addedCall.off('stateChanged', () => {});							
 					});						
 				});				
@@ -247,9 +252,9 @@ export default class Openlink
 		return callstatus;	
 	}
 	
-	async postCallStatus(ringing, call)
+	async postCallStatus(call)
 	{
-		console.debug("postCallStatus", ringing, call.id, call.direction, call.state);
+		console.debug("postCallStatus", call.id, call.direction, call.state);
 		
 		const payload = {
 			id: call.id, 
@@ -257,6 +262,7 @@ export default class Openlink
 			destination: this.destination,			
 			direction: call.direction,
 			state: call.state,
+			missed: !!this.missed[call.id],
 			callerInfo: call.callerInfo
 		};		
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);

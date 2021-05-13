@@ -64,33 +64,34 @@ function handleCallStatus(call)
 			
 	if (button)
 	{
-		if (call.state == "CallOriginated")
+		if (call.state == "CallOriginated"  && call.direction == "Outgoing")
 		{		
 			window.streamDeck.writeText(button.key, button.id, "white", "orange");	
+			button.call = call;			
 		}
 		else
 			
 		if (call.state == "CallEstablished")
 		{
 			data?.jabra?.connect();				
-			button.call = call;
 			window.streamDeck.writeText(button.key, button.id, "white", "green");	
+			button.call = call;				
 		}
 		else
 			
-		if (call.state == "ConnectionCleared" || call.state == "CallMissed")
+		if ((call.state == "ConnectionCleared" || call.state == "CallMissed") && button.call?.id == call.id)
 		{
 			data?.jabra?.clear();				
-			window.streamDeck.writeText(button.key, button.id, "white", "black");	
+			window.streamDeck.writeText(button.key, button.id, "white", button.background);	
 			delete button.call;
 		}	
 		else
 			
-		if (call.state == "CallDelivered")
+		if (call.state == "CallDelivered" && call.direction == "Incoming")
 		{
-			data?.jabra?.ring();
+			data?.jabra?.ring();			
+			window.streamDeck.writeText(button.key, button.id, "white", "red");	
 			button.call = call;				
-			window.streamDeck.writeText(button.key, button.id, "white", "red");			
 		}			
 	}
 }
@@ -166,9 +167,10 @@ function setupStreamDeck()
 		
 		if (json.interests) json.interests.forEach(interest =>
 		{
+			interest.background = "blue";
 			interest.key = i;
 			data.buttons[i] = interest;
-			window.streamDeck.writeText(i++, interest.id, "white", "black");			
+			window.streamDeck.writeText(i++, interest.id, "white", interest.background);			
 		});
 		
 		json = await openlink.getFeatures();
@@ -176,9 +178,10 @@ function setupStreamDeck()
 		
 		if (json.features) json.features.forEach(feature =>
 		{
+			feature.background = "purple";			
 			feature.key = i;
 			data.buttons[i] = feature;
-			window.streamDeck.writeText(i++, feature.id, "white", "black");			
+			window.streamDeck.writeText(i++, feature.id, "white", feature.background);			
 		});		
     });
 
