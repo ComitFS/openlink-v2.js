@@ -206,7 +206,7 @@ export default class Openlink
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/profiles/" + this.options.id + "/interests";
 		const response = await fetch(url, {method: "GET", headers: {authorization}});
-		const json = response.json();	
+		const json = await response.json();	
 		console.debug("getInterests", url, json, response);	
 		return json;
 	}
@@ -216,7 +216,7 @@ export default class Openlink
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/profiles/" + this.options.id + "/features";
 		const response = await fetch(url, {method: "GET", headers: {authorization}});
-		const json = response.json();	
+		const json = await response.json();	
 		console.debug("getFeatures", url, json, response);	
 		return json;
 	}	
