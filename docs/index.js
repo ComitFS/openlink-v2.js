@@ -159,35 +159,32 @@ function setupStreamDeck()
     });
 
     const load = document.getElementById("load");
-    load.addEventListener('click', event =>
+    load.addEventListener('click', async event =>
     {
-		async function getInterests()
-		{
-			let i = 0;
-			const data1 = await openlink.getInterests();
-			console.debug("load telephone interests", data1);
-			
-			if (data1.interests) data1.interests.forEach(interest =>
-			{
-				interest.background = "blue";
-				interest.key = i;
-				data.buttons[i] = interest;
-				window.streamDeck.writeText(i++, interest.id, "white", interest.background);			
-			});
-			
-			const data2 = await openlink.getFeatures();
-			console.debug("load telephone features", data2);
-			
-			if (data2.features) data2.features.forEach(feature =>
-			{
-				feature.background = "purple";			
-				feature.key = i;
-				data.buttons[i] = feature;
-				window.streamDeck.writeText(i++, feature.id, "white", feature.background);			
-			});	
-		}
+		let i = 0;
+		const data1 = await openlink.getInterests();
+		console.debug("load telephone interests", data1);
+		const interests = data1.interests || data1.interest;
 		
-		getInterests();
+		if (interests) interests.forEach(interest =>
+		{
+			interest.background = "blue";
+			interest.key = i;
+			data.buttons[i] = interest;
+			window.streamDeck.writeText(i++, interest.id, "white", interest.background);			
+		});
+		
+		const data2 = await openlink.getFeatures();
+		console.debug("load telephone features", data2);
+		const features = data2.features || data2.feature;		
+		
+		if (features) features.forEach(feature =>
+		{
+			feature.background = "purple";			
+			feature.key = i;
+			data.buttons[i] = feature;
+			window.streamDeck.writeText(i++, feature.id, "white", feature.background);			
+		});	
     });
 
     setupEventHandler();	
