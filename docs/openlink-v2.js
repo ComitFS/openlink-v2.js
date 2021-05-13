@@ -202,21 +202,23 @@ export default class Openlink
 	}	
 	
 	async getInterests()
-	{
-		console.debug("getInterests", this.options);		
+	{		
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/profiles/" + this.options.id + "/interests";
 		const response = await fetch(url, {method: "GET", headers: {authorization}});
-		return response.json();	
+		const json = response.json();	
+		console.debug("getInterests", url, json, response);	
+		return json;
 	}
 	
 	async getFeatures()
-	{
-		console.debug("getFeatures", this.options);		
+	{	
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/profiles/" + this.options.id + "/features";
 		const response = await fetch(url, {method: "GET", headers: {authorization}});
-		return response.json();	
+		const json = response.json();	
+		console.debug("getFeatures", url, json, response);	
+		return json;
 	}	
 
 	async makeCallDirectLine(destination)
