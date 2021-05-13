@@ -164,10 +164,10 @@ function setupStreamDeck()
 		async function getInterests()
 		{
 			let i = 0;
-			let json = await openlink.getInterests();
-			console.debug("load telephone interests", json.interests);
+			const data1 = await openlink.getInterests();
+			console.debug("load telephone interests", data1);
 			
-			if (json.interests) json.interests.forEach(interest =>
+			if (data1.interests) data1.interests.forEach(interest =>
 			{
 				interest.background = "blue";
 				interest.key = i;
@@ -175,10 +175,10 @@ function setupStreamDeck()
 				window.streamDeck.writeText(i++, interest.id, "white", interest.background);			
 			});
 			
-			json = await openlink.getFeatures();
-			console.debug("load telephone features", json.features);
+			const data2 = await openlink.getFeatures();
+			console.debug("load telephone features", data2);
 			
-			if (json.features) json.features.forEach(feature =>
+			if (data2.features) data2.features.forEach(feature =>
 			{
 				feature.background = "purple";			
 				feature.key = i;

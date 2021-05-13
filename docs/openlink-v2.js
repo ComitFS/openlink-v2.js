@@ -202,23 +202,21 @@ export default class Openlink
 	}	
 	
 	async getInterests()
-	{		
+	{
+		console.debug("getInterests", this.options);		
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/profiles/" + this.options.id + "/interests";
 		const response = await fetch(url, {method: "GET", headers: {authorization}});
-		const json = await response.json();	
-		console.debug("getInterests", url, json, response);	
-		return json;
+		return response.json();	
 	}
 	
 	async getFeatures()
-	{	
+	{
+		console.debug("getFeatures", this.options);		
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/profiles/" + this.options.id + "/features";
 		const response = await fetch(url, {method: "GET", headers: {authorization}});
-		const json = await response.json();	
-		console.debug("getFeatures", url, json, response);	
-		return json;
+		return response.json();	
 	}	
 
 	async makeCallDirectLine(destination)
@@ -228,8 +226,7 @@ export default class Openlink
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
 		const response = await fetch(url, {method: "POST", headers: {authorization}});
-		const callstatus = await response.json();	
-		return callstatus;	
+		return response.json();		
 	}
 	
 	async makeCall(destination)
@@ -239,8 +236,7 @@ export default class Openlink
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
 		const response = await fetch(url, {method: "PUT", headers: {authorization}});
-		const callstatus = await response.json();	
-		return callstatus;	
+		return response.json();	
 	}
 	
 	async requestAction(action, call, value)
@@ -250,8 +246,7 @@ export default class Openlink
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/requestaction/" + call.interest + "/" + action + "/" + call.id;
 		const response = await fetch(url, {method: "POST", headers: {authorization}, body: value});
-		const callstatus = await response.json();	
-		return callstatus;	
+		return response.json();	
 	}
 	
 	async postCallStatus(call)
