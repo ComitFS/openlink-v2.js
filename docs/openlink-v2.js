@@ -228,14 +228,24 @@ export default class Openlink
 		const response = await fetch(url, {method: "POST", headers: {authorization}});
 		return response.json();		
 	}
-	
-	async makeCall(destination)
+
+	async makeDefaultCall(destination)
 	{
 		console.debug("makeCall", destination);	
 
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
 		const response = await fetch(url, {method: "PUT", headers: {authorization}});
+		return response.json();	
+	}
+	
+	async makeCall(interest, destination)
+	{
+		console.debug("makeCall", interest, destination);	
+
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + interest + "/" + destination;
+		const response = await fetch(url, {method: "POST", headers: {authorization}});
 		return response.json();	
 	}
 	
