@@ -1,0 +1,2769 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?xml-stylesheet type='text/xsl' href='xep.xsl'?>
+<xep>
+<header> 
+  <title>Openlink</title> 
+  <abstract>This document defines an XMPP protocol extension for call control of Telephony Services using Ad-Hoc Commands, IO
+  Data and Publish-Subscribe.
+  </abstract>
+
+  <number>XXXX</number> 
+  <status>ProtoXEP</status> 
+  <type>Standards Track</type> 
+  <sig>Standards</sig> 
+  <dependencies> 
+    <spec>XEP-0050</spec> 
+    <spec>XEP-0060</spec>     
+    <spec>XEP-0244</spec>
+    <spec>XEP-0049</spec>    
+  </dependencies> 
+  <supersedes/> 
+  <supersededby/> 
+  <shortname>openlink</shortname> 
+  <author>
+  	<firstname>Dele</firstname>
+	<surname>Olajide</surname> 
+	<email>dele@olajide.net</email>	
+  </author>
+  <author>
+  	<firstname>Richard</firstname>
+	<surname>Beauchamp</surname>
+	<email>richard.beauchamp@bt.com</email>
+  </author> 
+    <author>
+    	<firstname>Pervez</firstname>
+  	<surname>Roy</surname>
+  	<email>pervez.roy@bt.com</email>
+  </author> 
+  <revision> 
+    <version>0.15</version> 
+    <date>2011-xx-xx</date> 
+    <initials>do</initials> 
+    <remark>Revised for voice bridge implementation:
+    <ol>
+    	<li>Added new command "Manage Voice Bridge" and new feature "VoiceBridge" for voice bridging</li>
+    	<li>Added new command "Manage Interests" to provide dynamic Interests for use with voice bridging</li>    
+    	<li>Added new attribute "value" to &lt;interest&gt; element</li>
+    </ol>
+    </remark> 
+  </revision>
+
+  <revision> 
+    <version>0.14</version> 
+    <date>2011-01-12</date> 
+    <initials>do</initials> 
+    <remark>Revised after first reference implementation of voice messages and new use cases to support softphones and voice recording:
+    <ol>
+    	<li>Added new feature type "VoiceRecorder" to indicate voice recording is available and also provide details of the stored voice recording for the call</li>
+    	<li>Added new feature type "MediaStream" to indicate media streaming is available and provide the pair of names representing the microphone and speaker audio streams passed out-of-band to a client listener using an open protocol like RTMP</li>
+    	<li>Added new feature type "SoftPhone" to support a softphone implementaion of a device</li>
+    	<li>Added new comand "Get Profile" to support implementation of device-centric softphones</li>    	
+    	<li>Added new attribute "device" on &lt;profile&gt; to associate a user profile with an identified physical device type</li>
+    	<li>Added a new table in "Make Call" command to show which features can be used with a make call</li>
+    	<li>Updated the &lt;voicemessage&gt; element with the amdetect and sequence child elements</li>
+    	<li>Added new voice management action "Query" to return details of voice message using the &lt;voicemessage&gt; element</li>
+    	<li>Removed voice message event data from &lt;callstatus&gt; element</li>    	
+    	<li>Documented voice message statusdescriptor values</li>       	
+    	<li>Revised Manage Voice Message inputs and output</li>      	
+    	<li>Added new command Get Call History</li>   
+    	<li>Added missing ConnectionBusy state</li>
+    	<li>Call duration updated to handle missed calls</li>
+    </ol>
+    </remark> 
+  </revision>
+  
+  <revision>  
+    <version>0.13</version> 
+    <date>2010-11-19</date> 
+    <initials>do</initials> 
+    <remark>Revised for voice messages:
+    <ol>
+    	<li>Defined new child element for voice message feature. It used for device status events.</li>
+    	<li>Changed inputs to Manage Voice Message to support Openlink TSP and TSCs. Now requires end-user &lt;profile&gt; id and &lt;feature&gt; id is optional for record action.</li>      	    	
+    	<li>Added more examples for Manage Voice messages.</li>      	
+    	<li>Added new feature type 'CallBack' for remote handset support.</li>      	
+    	<li>Added new command 'Get Interest' for quering a single interest.</li>     	
+    	<li>Added new telephony request actions 'AddThirdParty' and 'RemoveThirdParty' for adding third party voice entities to a call. It is needed to play/stop voice messages in active calls.</li>     	    	
+    	<li>Added attribute 'fwd' to &lt;interest&gt; to report the new destination that all incoming calls for the the interest will be forwared to.</li>
+    	<li>Added attribute 'online' to &lt;profile&gt; to report if user is logged into a device associated with a profile.</li>
+    	<li>Added element &lt;status&gt; to &lt;callstatus&gt; in order to identify the reason for the event message</li>
+    	<li>Added "edit" action to command "Manage Voice Message" in order to modify voice message label without replacing the audio.</li> 
+    	<li>Added new feature type "Conference" to indicate that the device profile supports optional conferencing which is required for AddThirdParty request action in a MakeCall command</li>
+    	<li>Added new feature type "VoiceMessagePlaylist" and new "create" action in "Manage Voice Message" command to enable the use of voice message playlists</li>
+    </ol>
+    </remark> 
+  </revision>  
+  
+  <revision> 
+    <version>0.12</version> 
+    <date>2010-06-11</date> 
+    <initials>do, pr</initials> 
+    <remark>Revised after first client API reference implementation. Changes include:
+    <ol>
+    	<li>Changed the recomended implementation method used by Openlink TSP to discover Openlink TSCs.</li>
+    	<li>Added namespace for Openlink Telephony Service Simulator (TSS).</li>      	
+    	<li>Changed &lt;calls&gt; into &lt;callstatus&gt; with namespace as root element for telephony call events.</li> 
+    	<li>Added root element &lt;devicestatus&gt; with namespace for telephony device events.</li>     	
+    	<li>Added &lt;callstatus&gt; as iodata output of all telephony comands (Make Call, Request Action, etc).</li>
+    	<li>Added &lt;callstatus&gt; as a child of each &lt;interest&gt; element in the iodata output of the "Get Interests" command.</li>
+    	<li>Removed OutputCall action</li>
+    	<li>Changed inputs to MakeIntercom to support Openlink TSP and TSCs. Now using end-user &lt;profile&gt; id and the &lt;destination&gt; jid.</li>      	
+    	<li>Revised examples.</li>
+     <li>Made value1 parameter of SetFeatures as required.</li>
+
+    </ol>
+    </remark> 
+  </revision>  
+  <revision> 
+    <version>0.11</version> 
+    <date>2010-04-29</date> 
+    <initials>do</initials> 
+    <remark>Revised after first Openlink TSP reference implementation. Changes include:
+    <ol>
+    	<li>Added support for Voice Messages (work-in-progress).</li>
+    	<li>Took out Monitor Interest command enabling more flexibility with the use of XMPP pub-sub collection nodes.</li> 
+    	<li>Added Interest Id parameter to Request Action command. This is needed when doing a TSP and TSC type implementation.</li>
+    	<li>Added implementation notes about the Openlink TSP and TSCs and their auto-discovery.</li>    	
+    </ol>
+    </remark> 
+  </revision>
+  <revision> 
+    <version>0.10</version> 
+    <date>2010-03-24</date> 
+    <initials>do</initials> 
+    <remark>Revised after architecture workshop at btc.</remark> 
+  </revision>  
+  <revision> 
+    <version>0.9</version> 
+    <date>2010-03-18</date> 
+    <initials>do</initials> 
+    <remark>Revised from further discussions with gs.</remark> 
+  </revision>     
+  <revision> 
+    <version>0.8</version> 
+    <date>2010-03-17</date> 
+    <initials>do</initials> 
+    <remark>Revised from post workshop discussions with gs.</remark> 
+  </revision>   
+  <revision> 
+    <version>0.7</version> 
+    <date>2010-03-05</date> 
+    <initials>do</initials> 
+    <remark>Revised from day 3 workshop with gs.</remark> 
+  </revision> 
+  <revision> 
+    <version>0.6</version> 
+    <date>2010-03-04</date> 
+    <initials>do</initials> 
+    <remark>Revised from day 2 workshop with gs.</remark> 
+  </revision> 
+  <revision> 
+    <version>0.5</version> 
+    <date>2010-03-03</date> 
+    <initials>do</initials> 
+    <remark>Revised from day 1 workshop with gs.</remark> 
+  </revision> 
+    <revision> 
+      <version>0.4</version> 
+      <date>2009-12-03</date> 
+      <initials>do</initials> 
+      <remark>Revised from first Openlink reference implementation.</remark> 
+  </revision>
+  <revision> 
+    <version>0.3</version> 
+    <date>2009-10-02</date> 
+    <initials>do</initials> 
+    <remark>Revised after review with rb.</remark> 
+  </revision>   
+  <revision> 
+    <version>0.2</version> 
+    <date>2009-09-23</date> 
+    <initials>do</initials> 
+    <remark>Revised after peer review with jt and nm.</remark> 
+  </revision>  
+  <revision> 
+    <version>0.1</version> 
+    <date>2009-09-21</date> 
+    <initials>do</initials> 
+    <remark>Initial version.</remark> 
+  </revision> 
+   
+</header> 
+<section1 topic='Introduction' anchor='intro'> 
+  <p>The purpose of Openlink is to provide a simple way of doing <strong>Computer Telephony Integration</strong> (CTI) with XMPP Applications
+   by specifying a profile of <cite>XEP-0050: Ad-Hoc Commands</cite>, associated <cite>XEP-0244: IO Data</cite> and <cite>XEP-0060: Publish-Subscribe</cite> instead of defining an XML messaging telephony
+  protocol like CSTA over XMPP as a new specialized and distinct XMPP protocol extension.</p>
+
+  <p>Openlink uses <cite>XEP-0244: IO Data</cite> Input and Output data structure to specify the complex data required as input and
+  output for telephony Ad-Hoc commands. Openlink also uses <cite>XEP-0060: Publish-Subscribe</cite> to route the event messages
+  generated by telephony call or device state changes from the telephony service to all interested parties.</p>
+  
+</section1> 
+
+<section1 topic='Requirements' anchor='reqs'> 
+  <p>This document addresses the following requirements:</p> 
+  <ul> 
+    <li>Provide XMPP Application developers with call control of Telephony Services that can be easily marshalled into an application object
+    model.</li>
+
+    <li>Re-use existing XMPP protocols wherever possible.</li> 
+  </ul> 
+</section1> 
+<section1 topic='Discovery' anchor='disco'> 
+  <p>A <strong>Telephony Service Provider</strong> (TSP) XMPP component MUST advertise any service commands it supports via XEP-0050 (as described in <cite>
+  XEP-0050: Ad-Hoc Commands</cite>).</p> 
+  
+  <p>In order to interact with a particular TSP component attached to an XMPP server, an application developer's user agent application MUST first discover that
+  component, the commands and IO Data structures it supports, then send the appropriate command to the component itself. An XMPP server SHOULD NOT process commands
+  on behalf of associated components, just as it does not handle service discovery requests on behalf of such components.</p>  
+  <p>Openlink uses version numbers in it's namespace. This ensures it remains an evolving standard with fixed (but easy to discover) features
+  on each version. Each TSP CAN support as many versions as possible. It is recommend that three versions on a rolling basis (previous, stable
+  and beta) SHOULD be supported. Useragent applications SHOULD be designed for a specific version and CAN use a binding tool to generate a
+  language specific class libraries for the IO Data structures.</p> 
+  <p>The available Openlink versions (commands and structures) will be discovered by
+  standard XMPP service discovery because the namespace is qualified by version numbers. The granularity of Ad-Hoc commands service discovery
+  will enable user-agent applications to selectively pick commands and supporting IO Data structures from different versions in order to be
+  backwards or forwards compatible with TSP implementations.</p>
+</section1> 
+
+<section1 topic='Use Cases' anchor='usecases'> 
+  <p>This document defines Openlink version 1.0.0, a profile of <cite>XEP-0050: Ad-Hoc Commands</cite> requests and supporting <cite>XEP-0244: IO Data</cite> that a user agent application can initiate to a TSP in order to recieve <cite>XEP-0060: Publish-Subscribe</cite> messages that will enable the following use cases:</p> 
+  <ol> 
+    <li>Get Profiles</li> 
+    <li>Get Profile</li>     
+    <li>Get Interests</li>     
+    <li>Get Interest</li>      
+    <li>Get Features</li> 
+    <li>Get Call History</li>      
+    <li>Subscribe for Events</li>         
+    <li>Make Call</li> 
+    <li>Make Intercom Call</li>     
+    <li>Request Action</li> 
+    <li>Manage Voice Message</li>  
+    <li>Manage Voice Bridge</li>  
+    <li>Manage Interests</li>      
+    <li>Set Feature</li>  
+    <li>Query Features</li>              
+
+  </ol> 
+  <p>Openlink uses <strong>profiles, interests and features</strong> to enable a <strong>user agent</strong> application use a TSP without in-depth knowledge of the underlying telephony resources.</p>
+  <p>An Openlink <strong>end-user</strong> may have a single default profile or multiple profiles depending on the capabilities of the devices and services available
+  to them.</p>
+  <p>An Openlink interest represents a <b>directory number</b> or <b>direct line</b> that a user is interested in.
+  An end-user could have by default, a
+  single directory number or a whole range of directory numbers and direct lines depending on the active user profile.
+  A direct line on the other hand, is a sharable hard (TDM) or soft (VOIP) dedicated connection between a group of users.</p>
+  <p>A feature is telephony software or hardware feature that can be used on the profile telephony device or call to enhance the user experience. For
+  example, something hardware like a second handset, an independent speaker unit or software like a voice message, call forwarding, a speed dial or ability to make a call private or public. A user could have by default a
+  single handset and integrated speaker unit.</p>
+  <p> The user agent application does not need to know the details of a user profile, interest or feature, but should be able to query the TSP for a list of user
+  profiles, associated user interests and features in order to present them to the user interface and enable the user make a choice. User profiles interests and
+  features are IO data objects required by Openlink commands. </p>
+  
+  <p><em>Note: The text that follows assumes that implementors have read and understood <cite>XEP-0050: Ad-Hoc Commands</cite>, <cite>
+  XEP-0244: IO Data</cite>, <cite>XEP-0060: Publish-Subscribe</cite> and know how to discover an XMPP component like 'openlink.shakespeare.lit'.</em></p>
+
+
+  <section2 topic='Get Profiles' anchor='get-profiles'> 
+    <p>To enable a user agent application fetch user profiles on behalf of an end user, the fully qualified XMPP JID of the end user
+    MUST be provided. The TSP can keep a mapping of JIDs to any required internal user identity scheme adopted by the TSP. This
+    command is NOT a batch command and must be issued explicitly for each end-user.<p/> The command node for this use case SHOULD be
+    "http://xmpp.org/protocol/openlink:01:00:00#get-profiles".</p>
+    
+    <section3 topic='Input' anchor='get-profiles-input'> 
+    	<section4 topic='Required' anchor='get-profiles-input-required'> 
+    	<ol>
+    	<li>The fully qualified XMPP <strong>JID</strong> of the end user.</li>
+    	</ol>
+    	</section4>
+    	<section4 topic='Optional' anchor='get-profiles-input-optional'> 
+    	None.
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='get-profiles-output'> 
+    	<p>The output is a list of <strong>profiles</strong>. Each <strong>profile</strong> contains the profile <strong>
+	id</strong>, <strong>device</strong> identification, <strong>label</strong> and optional <strong>default</strong> and <strong>online</strong> attributes.
+	The online attribute is a flag that is set true when the end user is logged into a device somewhere with this profile. 
+	Also included, is a list of available telephony
+	<strong>actions</strong> for the profile. Each <strong>action</strong> will contain the action <strong>id</strong> and
+	<strong>label</strong> attributes.</p> <p>The list of actions potentially supported include:</p>
+    	
+    	<ol>
+    	<li>AnswerCall</li>
+    	<li>ClearConference</li>    	
+    	<li>ClearConnection</li>
+    	<li>ClearCall</li>    	
+    	<li>ConferenceCall</li>
+    	<li>ConsultationCall</li>
+    	<li>StartVoiceDrop</li>  
+	<li>StopVoiceDrop</li>    	
+    	<li>HoldCall</li>
+	<li>PrivateCall</li>    	
+	<li>PublicCall</li>    	
+    	<li>IntercomTransfer</li>     	
+    	<li>JoinCall</li> 	
+	<li>RetrieveCall</li>
+	<li>TransferCall</li>      	
+    	<li>SingleStepTransfer</li>
+    	<li>SendDigits</li>
+    	<li>SendDigit</li>    	
+    	<li>AddThirdParty</li>      	
+    	<li>RemoveThirdParty</li>     	
+    	</ol>
+    </section3>
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application gets a list of user profiles'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='get-profiles-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-profiles'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+       <in>
+        <jid>alan.trader@shakespeare.lit'</jid>
+       </in>
+     </iodata>
+    </command>           
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD complete the command and return
+    the appropriate output IO Data.</p>
+    <example caption='TSP returns Get Profiles to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='get-profiles-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-profiles'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <profiles xmlns='http://xmpp.org/protocol/openlink:01:00:00/profiles'>
+	    <profile id="alan.trader_ny" device="its.netrix" default="true" label="Desktop Netrix" default="true" online="true">
+	      <actions>
+		<action id="AnswerCall"  	label="Answer an alerting call on the user device" />	      
+		<action id="ClearConference"    label="Clears an active local conference on the device" />	      
+		<action id="ClearConnection"    label="Removes the user as an active participant of a call" />	      
+		<action id="ClearCall" 		label="Forces all participants off call and disconnects the far party" />	    
+		<action id="ConferenceCall"	label="Puts the active call into a local conference on the device" />
+		<action id="ConsultationCall"   label="First part of a transfer by calling the transfer target" />
+		<action id="StartDropVoice"   	label="Start a voice message drop into the active call" />		
+		<action id="StopDropVoice"   	label="Abort a voice message drop into the active call" />		
+		<action id="HoldCall"    	label="Put the active call on hold" />		
+		<action id="PrivateCall"    	label="Make the active call Private" />
+		<action id="PublicCall"    	label="Make the active Private call Public" />
+		<action id="IntercomTransfer" 	label="Transfer the active call to internal user by name" />
+		<action id="JoinCall"       	label="Join an active call elsewhere and make it a conference call if not already" />		
+		<action id="RetrieveCall"    	label="Retrieve a held call" />
+		<action id="TransferCall"    	label="Second part of a transfer. Remove user and join active call to transfer target" />		
+		<action id="SingleStepTransfer" label="Single setp transfer of active call to another party" />
+		<action id="SendDigits"       	label="Send dial digits on a selected line" />		
+		<action id="SendDigit"      	label="Send a digit DTMF on an active call" />		
+		<action id="AddThirdParty"      label="Add a third party destination to this call and make it a conference if not already" />		
+		<action id="RemoveThirdParty"   label="Remove a third party destination from this call" />		
+              </actions>	    
+	    </profile>  
+	    <profile id="alan.trader_london" device="cisco.7550" label="Desktop IP Phone" default="false" online="false">
+	      <actions>
+		<action id="AnswerCall"  	label="Answer an alerting call on the user device" />		      
+		<action id="ClearConnection"    label="Removes the user as an active participant of a call" />	      
+		<action id="ConsultationCall"   label="First part of a transfer by calling the transfer target" />
+		<action id="HoldCall"    	label="Put the active call on hold" />		
+		<action id="RetrieveCall"    	label="Retrieve a held call" />
+		<action id="TransferCall"    	label="Second part of a transfer. Remove user and join active call to transfer target" />		
+		<action id="SingleStepTransfer" label="Single setp transfer of active call to another party" />
+		<action id="SendDigit"      	label="Send a digit DTMF on an active call" />		
+              </actions>	    
+	    </profile>  	    
+         </profiles>
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+  </section2> 
+
+
+  <section2 topic='Get Profile' anchor='get-profile'> 
+    <p>In many cases, a user profile is associated with a real physical device and it is often required to implement a softphone version of this device, 
+    In such situations, a user agent application can fetch the device details of a profile on behalf of an end user with this command. 
+    The details returned in the output will depend on the device type and the device vendor.
+    The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#get-profile".</p>
+    
+    <section3 topic='Input' anchor='get-profile-input'> 
+    	<section4 topic='Required' anchor='get-profile-input-required'> 
+    	<ol>
+    	<li>The <strong>profile</strong> id.</li>
+    	</ol>
+    	</section4>
+    	<section4 topic='Optional' anchor='get-profiles-input-optional'> 
+    	None.
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='get-profile-output'> 
+    	<p>The output is a <strong>device</strong> element with a namespace "http://xmpp.org/protocol/openlink:01:00:00/profile/xxxx"  where xxxxx is the device attribute of the profile.
+    	The contents is any well-formed XML that uniquely associated with the namespace.
+    	</p>
+    </section3>
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application gets a detailed device profile'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='get-profile-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-profile'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+       <in>
+        <profile>alan.trader_netrix</profile>
+       </in>
+     </iodata>
+    </command>           
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD complete the command and return
+    the appropriate output IO Data.</p>
+    <example caption='TSP returns Get Profile device data to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='get-profile-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-profile'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <device xmlns='http://xmpp.org/protocol/openlink:01:00:00/profile/its.netrix'>
+ 	    <keypages>
+ 	    	<keypage id="0" label="Home Page">
+ 	    	   <key id="0" label="John Brown" function="1" qualifier="210" modifier="0" >
+ 	    	   ....
+ 	    	   ....
+ 	    	</keypages>
+ 	    </keypages>
+ 	    .....
+ 	    .....
+         </device>
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example>     
+  </section2>
+
+  <section2 topic='Get Interests' anchor='get-interests'> 
+    <p>To enable a user agent application fetch user interests, a user profile must be provided.<p/> The command node for this use case SHOULD be
+    "http://xmpp.org/protocol/openlink:01:00:00#get-interests".</p>
+    
+    <section3 topic='Input' anchor='get-interests-input'> 
+    	<section4 topic='Required' anchor='get-interests-input-required'> 
+    	<ol>
+    	<li>The <strong>profile</strong> id.</li>
+    	</ol>    	
+    	</section4>
+    	<section4 topic='Optional' anchor='get-interests-input-optional'> 
+    	None.
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='get-interests-output'> 
+    	<p>The output is a list of <strong>interests</strong>. Each <strong>interest</strong> contains the interest <strong>
+	id</strong>, <strong>type</strong>, <strong>label</strong> with optional <strong>default</strong> and <strong>fwd</strong> attributes.
+	The default attribute value is either <strong>true</strong> or <strong>false</strong>. The fwd attrbute reports any call active forwarding destination for the interest. 
+	The list of interest types supported include:</p>
+    	
+    	<ol>
+    	<li>DirectoryNumber</li>
+    	<li>DirectLine</li>    	   	
+    	</ol>	
+    	
+    	<p> If there are any active calls for an interest, then the interest element will also have a child <strong>callstatus</strong> element which will have a list of child <strong>call</strong> elements. Each <strong>call</strong> element will represent an active call for the inerest.
+ 
+    	See <link url='#make-call-output'>Make Call</link> output for details of &lt;callstatus&gt;. 
+    	</p>
+    </section3> 
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application gets a list of user interests'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='get-interests-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-interests'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <profile>alan.trader_netrix</profile>
+      </in>
+    </iodata> 
+  </command>     
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the service SHOULD complete and return the
+    appropriate output IO Data.</p>
+       <p>In the following example 'callstatus' is included for those interests which currently have active calls.</p>
+    <example caption='TSP returns Get Interests to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='get-interests-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-interests'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>     
+         <interests xmlns='http://xmpp.org/protocol/openlink:01:00:00/interests'>
+	    <interest id="alan.trader_primary_ddi" type="DirectoryNumber" label="Primary Extension" default="true" value="67290" />	    	    
+	    <interest id="alan.trader_DDI_67289"    type="DirectoryNumber" label="Equities Group" fwd="07888341792" default="false" value="67289" />	    
+	    <interest id="alan.trader_PW_12345"    type="DirectLine"      label="12345"  default="false"  value="1234" />		    
+            <interest id="D17289277767291"  type="DirectoryNumber" label="Johm Butler  67289" default="false"  value="67291" >
+		   <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+		     <call>
+		        <id>0000000540</id>
+		        <profile>277767291</profile>
+		        <interest>D17289277767291</interest>
+		        <changed>State</changed>
+		        <state>CallEstablished</state>
+		        <direction>Outgoing</direction>
+		        <caller>
+		           <number>000000067289</number>
+		           <name>Johm Butler  67289</name>
+		        </caller>
+		        <called>
+		           <number>9123</number>
+		           <name>9123</name>
+		        </called>
+		        <duration>1200</duration>
+		        <actions>
+		           <ClearConnection/>
+		           <HoldCall/>
+		           <ConferenceCall/>
+		           <IntercomTransfer/>
+		           <SingleStepTransfer/>
+		           <ConsultationCall/>
+		           <PrivateCall/>
+		           <SendDigit/>
+		        </actions>
+		        <features>
+		           <feature id="priv">false</feature>
+		           <feature id="hs1">true</feature>
+		           <feature id="hs2">false</feature>
+		        </features>
+		        <participants>
+		           <participant jid="1290@btg199251" type="Inactive" direction="Outgoing"/>
+		           <participant jid="1291@btg199251" type="Active" direction="Outgoing" timestamp="Tue May 18 16:12:51 BST 2010"/>
+		           <participant jid="1294@btg199251" type="Inactive" direction="Outgoing"/>
+		           <participant jid="1293@btg199251" type="Inactive" direction="Outgoing"/>
+		        </participants>
+		     </call>
+                     <call>
+		        <id>0000000549</id>
+		        <profile>277767291</profile>
+		        <interest>D17289277767291</interest>
+		        <changed>State</changed>		        
+		        <state>CallHeld</state>
+		        <direction>Outgoing</direction>		       	
+	   		<caller>
+		           <number>000000067289</number>
+		           <name>Johm Butler  67289</name>
+		        </caller>	   		<called>
+	   	     	    <number>01234567</number>
+	   	            <name></name>
+	   		</called>
+                        <duration>48000</duration>  	                 	
+			<actions>      
+ 		     	  <RetrieveCall/>   		     
+			</actions>                        	   	
+	   		  <participants>
+	   	    	  <participant jid="alan.trader@shakespeare.lit" direction="Outgoing" type="Active" timestamp="Tue May 18 16:09:49 BST 2010"/>
+	   	    	  <participant jid="tracy.trader@shakespeare.lit" direction="Outgoing" type="Inactive" />
+	   	    	  <participant jid="tony.money@shakespeare.lit" direction="Outgoing" type="Inactive" />
+			</participants>	  
+		  </call>
+	        </callstatus>
+	    </interest>	
+	 </interests>
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+  </section2>
+
+
+  <section2 topic='Get Interest' anchor='get-interest'> 
+    <p>To enable a user agent application fetch a specific single user interest, the interest must be provided.<p/> The command node for this use case SHOULD be
+    "http://xmpp.org/protocol/openlink:01:00:00#get-interest".</p>
+    
+    <section3 topic='Input' anchor='get-interest-input'> 
+    	<section4 topic='Required' anchor='get-interest-input-required'> 
+    	<ol>
+    	<li>The <strong>interest</strong> id.</li>
+    	</ol>    	
+    	</section4>
+    	<section4 topic='Optional' anchor='get-interest-input-optional'> 
+    	None.
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='get-interest-output'> 
+    	<p>The output is the requested <strong>interest</strong> element contained within a <strong>interests</strong> element.
+    	See <link url='#get-interests-output'>Get Interests</link> output for details of &lt;interest&gt;. 
+    	</p>
+    </section3> 
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application queries a user interest'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='get-interest-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-interest'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <interest>D17289277767291</interest>
+      </in>
+    </iodata> 
+  </command>     
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the service SHOULD complete and return the
+    appropriate output IO Data.</p>
+    <example caption='TSP returns Get Interest to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='get-interest-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-interest'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>     
+         <interests xmlns='http://xmpp.org/protocol/openlink:01:00:00/interests'>
+            <interest id="D17289277767291"  type="DirectoryNumber" label="Johm Butler  67289" fwd="07888341792" default="false" online="false" value="67291" >         
+		 <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+		     <call>
+		        <id>0000000540</id>
+		        <profile>277767291</profile>
+		        <interest>D17289277767291</interest>
+		        <changed>State</changed>		        
+		        <state>CallEstablished</state>
+		        <direction>Outgoing</direction>
+		        <caller>
+		           <number>000000067289</number>
+		           <name>Johm Butler  67289</name>
+		        </caller>
+		        <called>
+		           <number>9123</number>
+		           <name>9123</name>
+		        </called>
+		        <duration>1200</duration>
+		        <actions>
+		           <ClearConnection/>
+		           <HoldCall/>
+		           <ConferenceCall/>
+		           <IntercomTransfer/>
+		           <SingleStepTransfer/>
+		           <ConsultationCall/>
+		           <PrivateCall/>
+		           <SendDigit/>
+		        </actions>
+		        <features>
+		           <feature id="priv">false</feature>
+		           <feature id="hs1">true</feature>
+		           <feature id="hs2">false</feature>
+		        </features>
+		        <participants>
+		           <participant jid="1290@btg199251" type="Inactive" direction="Outgoing"/>
+		           <participant jid="1291@btg199251" type="Active" direction="Outgoing" timestamp="Tue May 18 16:12:51 BST 2010"/>
+		           <participant jid="1294@btg199251" type="Inactive" direction="Outgoing"/>
+		           <participant jid="1293@btg199251" type="Inactive" direction="Outgoing"/>
+		        </participants>
+		     </call>
+                     <call>
+		        <id>0000000549</id>
+		        <profile>277767291</profile>
+		        <interest>D17289277767291</interest>
+		        <changed>State</changed>		        
+		        <state>CallHeld</state>
+		        <direction>Outgoing</direction>		       	
+	   		<caller>
+		           <number>000000067289</number>
+		           <name>Johm Butler  67289</name>
+		        </caller>	   		<called>
+	   	     	    <number>01234567</number>
+	   	            <name></name>
+	   		</called>
+                        <duration>48000</duration>  	                 	
+			<actions>      
+ 		     	  <RetrieveCall/>   		     
+			</actions>                        	   	
+	   		  <participants>
+	   	    	  <participant jid="alan.trader@shakespeare.lit" direction="Outgoing" type="Active" timestamp="Tue May 18 16:09:49 BST 2010"/>
+	   	    	  <participant jid="tracy.trader@shakespeare.lit" direction="Outgoing" type="Inactive" />
+	   	    	  <participant jid="tony.money@shakespeare.lit" direction="Outgoing" type="Inactive" />
+			</participants>	  
+		  </call>
+	        </callstatus>
+	    </interest>	
+	 </interests>		    
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+  </section2> 
+
+
+  <section2 topic='Get Features' anchor='get-features'> 
+    <p>To enable a user agent application fetch telephony device features available to a user when using a specific profile. 
+    Modifiable device feature can be changed explicitly with the <link url='#set-feature'>Set Feature</link> command or implicitly with telephony commands. An example would be the "PrivateCall" action which changes the privacy attribute of a call.
+    The <strong>profile id</strong> must be provided as input.<p/> The command node for this use case SHOULD be
+    "http://xmpp.org/protocol/openlink:01:00:00#get-features".</p>
+    
+    <section3 topic='Input' anchor='get-features-input'> 
+    	<section4 topic='Required' anchor='get-features-input-required'> 
+    	<ol>    	
+    	<li>The <strong>profile</strong> id.</li>    	
+    	</ol>
+    	</section4>
+    	<section4 topic='Optional' anchor='get-features-input-optional'> 
+    	None.
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='get-features-output'> 
+    	<p>The output is a list of <strong>features</strong>. Each <strong>feature</strong> contains the feature <strong>
+	id</strong>, <strong>type</strong> and <strong>label</strong>.
+	The list of feature types potentially supported include:</p>
+
+	<ol>
+           <li>MessageWaiting</li>
+           <li>MicrophoneGain</li>           
+           <li>MicrophoneMute</li>           
+           <li>RingerStatus</li>           
+           <li>SpeakerMute</li>                      
+           <li>SpeedDial *</li>    	   	
+           <li>GroupIntercom *</li>             
+           <li>SpeakerChannel</li>  
+           <li>VoiceMessage *</li>             
+           <li>VoiceMessagePlaylist *</li>   
+           <li>VoiceRecorder *</li>   
+           <li>VoiceBridge *</li>              
+           <li>Privacy</li>            
+           <li>Handset</li>            
+           <li>DoNotDisturb</li>            
+           <li>CallForward</li>            
+           <li>CallBack</li>
+           <li>Conference</li>
+           <li>MediaStream *</li>        
+           <li>SoftPhone</li>             
+	</ol>	
+	<p>* Device features not modifiable</p>
+    </section3> 
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application gets a list of user device and call features'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='get-features-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-features'> 
+	    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+	      <in>
+	        <profile>alan.trader_netrix</profile>
+	      </in>
+	    </iodata> 
+    </command>          
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the service SHOULD complete and return the
+    appropriate output IO Data.</p>
+    <example caption='TSP returns Get Features to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='get-features-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-features'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+        <profile id="alan.trader_netrix"/>       
+        <features xmlns='http://xmpp.org/protocol/openlink:01:00:00/features'>
+	    <feature id="hs1" 			type="Handset"         	label="Handset 1"  />	    
+	    <feature id="hs2" 			type="Handset"         	label="Handset 2" />	    
+	    <feature id="sdn_4566" 		type="SpeedDial"       	label="Bill Broker (Desk)" />	    
+	    <feature id="sdn_4567" 		type="SpeedDial"       	label="Bill Broker (Mobile)" />	    
+	    <feature id="speaker_01"    	type="SpeakerChannel" 	label="Speaker Channel 1" />		    
+	    <feature id="intercom_london"    	type="GroupIntercom" 	label="Group Intercom for London" />		    
+	    <feature id="voice_message_35"	type="VoiceMessage" 	label="Invitation to buy Tesco shares" />		    
+	    <feature id="call_forward"  	type="CallForward"    	label="Call Forward" />		    
+	    <feature id="privacy"   		type="Privacy"         	label="Privacy" />	
+	    <feature id="message_waiting"   	type="MessageWaiting" 	label="Message Waiting" />	
+	    <feature id="callback_1"	  	type="CallBack"    	label="Callback to mobile phone" />		    	    
+	    <feature id="netrix_softphone_1"	type="SoftPhone"    	label="ITS.Netrix Softphone" />		
+	    <feature id="voice_bridge_1"	type="VoiceBridge"    	label="SIP VoiceBridge via Cisco Call Manager" />		    
+         </features>
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+  </section2>
+
+ 
+  <section2 topic='Subscribe for Events' anchor='subscribe-for-events'>
+    <p>In order to recieve notifications of telephony call events, a user agent application MUST subscribe for Openlink events using <cite>XEP-0060: Publish-Subscribe</cite> (pub-sub).
+
+    Openlink interests are represented as pub-sub leaf nodes. (See <cite>XEP-0060: Publish-Subscribe</cite>).
+    
+    The user agent application must explicitly subscribe for interest leaf nodes or self-created collection nodes that contain interest leaf nodes.
+    A user agent can only subscribe on behalf of an end-user for interests provisioned to the end-user recieved by the TSP with a <link url='#get-interests'>Get Interests</link> command.
+    </p>
+    
+    <p>Subscribing for Openlink interests telephony call events implies subscribing for events relating to the device that the interests are associated with.</p>
+    
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    
+    <example caption='User agent subscribes for interest events on behalf of end user'><![CDATA[      
+<iq type='set'
+    from='user.agent@shakespeare.lit/globe'
+    to='pubsub.shakespeare.lit'
+    id='sub1'>
+  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
+    <subscribe
+        node='alan.trader_primary_ddi'
+        jid='user.agent@shakespeare.lit'/>
+  </pubsub>
+</iq>    
+    
+    ]]></example> 
+    <p>If the subscription request is successfully processed, the pub-sub service MUST inform the user agent that it is now subscribed for the interest node (which MAY include a service-generated SubID).</p>
+    <example caption='The pub-sub service responds to Subscribe request'><![CDATA[ 
+    
+<iq type='result'
+    from='pubsub.shakespeare.lit'
+    to='user.agent@shakespeare.lit/globe'
+    id='sub1'>
+  <pubsub xmlns='http://jabber.org/protocol/pubsub'>
+    <subscription
+        node='alan.trader_primary_ddi'
+        jid='user.agent@shakespeare.lit'
+        subid='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'
+        subscription='subscribed'/>
+  </pubsub>
+</iq>
+
+    ]]></example> 
+
+    <p> The current state of all active calls for the subscribed interest WILL be immediately pushed by the pub-sub service to the user agent.
+    </p>
+  </section2> 
+
+  <section2 topic='Make Call' anchor='make-call'> 
+    
+    <p>To initiate a outbound call, the user agent application has to provide the end user JID, optional destination, user interest and list of
+    features. The user default interest and features will be used if not provided and the destination is only required when the user interest is a
+    directory number line. It is not required if the interest is a direct line or a speed dial is included in the list of features.</p>
+
+    <section3 topic='Input' anchor='make-call-input'> 
+    	<section4 topic='Required' anchor='make-call-input-required'> 
+    	<ol>
+    		<li>The fully qualified XMPP <strong>JID</strong> of the end user. </li>
+		<li>An <strong>interest</strong> (in case of a direct line or if default directory number is not suitable).</li>    		
+		<li>The <strong>destination</strong> (if interest is a directory number line and speed dial is not supplied as a feature). </li>
+    	</ol>
+    	</section4>
+	<section4 topic='Optional' anchor='make-call-input-optional'> 
+    	<ol>	
+		<li>A list of <strong>features</strong> to be applied to the device or line for the call. 
+		Each feature must contain the feature <strong>id</strong> and <strong>value1</strong> and <strong>value2</strong> as applicable.
+		</li>
+    	</ol>
+		
+		<table caption='These are the feature types that can be used in a Make Call command'>
+		<tr><th>Feature Type</th><th>Purpose</th><th>value1</th><th>value2</th></tr>		
+		<tr><td>SpeedDial</td><td>Speed dial to be used as destination of call</td><td></td><td></td></tr>	
+		<tr><td>VoiceMessage</td><td>Voice message to be played after call is established</td><td></td><td></td></tr>		
+		<tr><td>MicrophoneMute</td><td>Mute/unmute microphone when call is established</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>SpeakerMute</td><td>Mute/unmute speaker when call is established</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>SpeakerChannel</td><td>Put call on speaker channel after call is established</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>Privacy</td><td>Set the device privacy after call is established</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>Handset</td><td>Set the device active handset to be used for the call</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>CallBack</td><td>Set callback destination for remote handset to be used for the call</td><td>'true' or 'false'</td><td>Telephone Number</td></tr>	           
+		<tr><td>Conference</td><td>Indicates that conference resources should be allocated for the call in order to support line sharing actions</td><td>'true' or 'false'</td><td></td></tr>		
+		</table>
+		
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='make-call-output'> 
+
+    The output is <strong>callstatus</strong>, consisting of a single <strong>call</strong> child element, representing the first call event. The  <strong>call</strong> element contains the call <strong>id</strong>,
+    <strong>changed</strong> code, <strong>state</strong>, <strong>direction</strong>,  <strong>duration</strong>, <strong>caller</strong> details, list of <strong>features</strong>, <strong>called</strong> party details, list of <strong>actions</strong> and list of <strong>participants</strong>.
+    It also includes the actual <strong>profile</strong> id and <strong>interest</strong> id for reference when default values are used.
+    <p>The namespace for <strong>callstatus</strong> SHOULD be 'http://xmpp.org/protocol/openlink:01:00:00#call-status'.</p>
+
+The changed code indicates which call attributes changed and caused the new call status message to be published. 
+
+<table caption='Call status change codes'>
+<tr><th>Changed code</th><th>Description</th></tr>
+<tr><td>State</td><td>A change in telephony call state.</td></tr>
+<tr><td>Actions</td><td>A change in valid telephony actions without a call state change.</td></tr>
+<tr><td>Participant</td><td>A change in participation without a call state change.</td></tr>
+<tr><td>Caller</td><td>A change in caller details.</td></tr>
+<tr><td>Called</td><td>A change in called details.</td></tr>
+<tr><td>Privacy</td><td>A change in the call privacy.</td></tr>
+<tr><td>VoiceMessage</td><td>A voice message feature event.</td></tr>
+</table>		
+ 
+<p/>
+
+<table caption='List of recommended call state names'>
+<tr><th>State name</th><th>Description</th></tr>
+<tr><td>CallOriginated</td><td>Indicates to an end-user initiating a call that a telephony line is allocated and gone off hook.</td></tr>
+<tr><td>CallDelivered</td><td>Indicates to an end-user initiating a call that the destination is ringing.</td></tr>
+<tr><td>CallEstablished</td><td>Indicates to an end-user initiating a call that the destination has answered the call.</td></tr>
+<tr><td>CallFailed</td><td>Indicates to an end-user initiating a call that the destination has rejected the call.</td></tr>
+<tr><td>CallConferenced</td><td>Indicates that a call now has multiple active participants or multiple far parties.</td></tr>
+<tr><td>CallBusy</td><td>Indicates to a peer end user that a call is now active and available to join subject to privacy.</td></tr>
+<tr><td>CallHeld</td><td>Indicates a call is held on the caller device.</td></tr>
+<tr><td>CallHeldElseWhere</td><td>Indicates a call on a shared interest is held elsewhere and can be retrieved by the user.</td></tr>
+<tr><td>CallTransferring</td><td>A call transfer is in progress.</td></tr>
+<tr><td>CallTransferred</td><td>A call transfer has been made.</td></tr>
+<tr><td>ConnectionBusy</td><td>An interested peer call is offhook elsewhere.</td></tr>
+<tr><td>ConnectionCleared</td><td>A call has ended on the caller device.</td></tr>
+<tr><td>CallMissed</td><td>A caller stopped ringing before anyone could answer.</td></tr>
+</table>
+
+<p/>
+
+    For a missed call, the duration is a progressive value of the call duration in milli-seconds from the moment the call is initiated. 
+    In all other circumstances, it is the call duration from the moment the call is established.<p/>
+  
+    The call features are the effect of features selected on a call by default or explictly activated by the user. For example, user presses the privacy button during
+    the call. Each call feature has an <strong>id</strong> attribute and an optional payload of information reported by the TSP. The payload is either a simple string 
+    value or a namespace qualified XML parent element with a list of single value children elements depending on the feature type.<p/>
+    The following feature types carry an XML payload.<p/>
+    <ul>
+      <li><strong>VoiceRecorder</strong> has a child element called &lt;voicerecorder&gt;
+	<table caption='voicerecorder element details'>
+	<tr><th>Element</th><th>Description</th><th>Values</th></tr>			
+	<tr><td>recnumber</td><td>The voice recording number</td><td>Number</td></tr>
+	<tr><td>recport</td><td>The voice recording port allocated</td><td>Number</td></tr>	
+	<tr><td>recchan</td><td>The voice recording channel</td><td>Text</td></tr>	
+	<tr><td>rectype</td><td>The voice recording type</td><td>Text</td></tr>		
+	</table> 
+        <p>The namespace for <strong>voicerecorder</strong> SHOULD be 'http://xmpp.org/protocol/openlink:01:00:00/features#voice-recorder'.</p>
+      </li>     
+      
+      <li><strong>MediaStream</strong> has a child element called &lt;mediastream&gt;
+	<table caption='mediastream element details'>
+	<tr><th>Element</th><th>Description</th><th>Values</th></tr>			
+	<tr><td>microphone</td><td>The microphone stream name</td><td>Text</td></tr>
+	<tr><td>speaker</td><td>The speaker stream name</td><td>Text</td></tr>		
+	</table> 
+        <p>The namespace for <strong>mediastream</strong> SHOULD be 'http://xmpp.org/protocol/openlink:01:00:00/features#media-stream'.</p>
+      </li>       
+    </ul>
+    <p/>
+    Caller and Called details includes the <strong>name</strong> and <strong>number</strong> details.
+    The list of valid <strong>actions</strong> will be subset of the complete list of actions supported by the active profile. See <link url='#get-profiles-output'>Get Profile Output</link> 
+    The end-user who initiates the call is considered the active participant, while all other users interested in the call are considered inactive participants. 
+    Each <strong>participant</strong> has <strong>jid</strong>, <strong>direction</strong>, <strong>type</strong> and <strong>timestamp</strong> attributes.<p/>
+    The list of participant types supported include:
+        	
+	<ol>
+	<li>Active</li>
+	<li>Inactive</li>    	   	
+    	</ol>	
+    The list of call or participant direction types supported include:
+        	
+	<ol>
+	<li>Outgoing</li>
+	<li>Incoming</li>    	   	
+    	</ol>	
+    </section3> 
+
+    <p>Each individual call has a list of valid actions that can be requested for while the call remains in its current state and holds its current attributes.</p> 
+
+     <p>The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#make-call".</p>
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User Agent makes call on behalf of user'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='make-call-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#make-call'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <jid>alan.trader@shakespeare.lit'</jid>
+        <interest>alan.trader_DDI_6789</interest>  
+        <destination>3050</destination> 
+        <features>
+           <feature>
+              <id>hs2</id>
+	      <value1>true</value1>
+	   </feature>
+        </features>
+      </in>
+    </iodata> 
+  </command>           
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the telephony action.</p> 
+    <example caption='TSP returns response for Make Call to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='request-action-makecall-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#make-call'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-567896453</id>
+		<changed>State</changed>		        
+	   	<state>CallOriginated</state>
+	   	<direction>Outgoing</direction>
+	   	<duration>1200</duration>	   	
+                <features>
+                     <feature id="privacy" /> 
+                     <feature id="hs1" />                      
+                </features>   	
+	   	<caller>
+	   	     <number>3092</number>
+	   	     <name>Alan Trader</name>
+	   	</caller>
+	   	<called>
+	   	     <number>3050</number>
+	   	     <name>Bill Broker</name>
+	   	</called>
+		<actions>
+		   <ClearConnection />      
+		   <SendDigits />   		   		   
+		</actions>                        
+	   	<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Outgoing" type="Active" timestamp="Tue May 18 16:12:51 BST 2010"/>
+	   	    <participant jid="tracy.trader@shakespeare.lit" direction="Outgoing" type="Inactive" />
+	   	    <participant jid="tony.money@shakespeare.lit" direction="Outgoing" type="Inactive" />
+		</participants>	 
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 
+            </call>
+         </callstatus>
+       </out>
+     </iodata>         
+  </command> 
+</iq> 
+    ]]></example>                 
+
+    <p>The request is then handled by the TSP CTI engine which in turn will begin to push out telephony events for the end user to the user agent as they occur.
+    The events are delivered though standard <cite>XEP-0060: Publish-Subscribe</cite> notifications.</p>
+    
+    <p>Each event notification item will consist of a list of pub-sub <strong>items</strong>. 
+    Each <strong>item</strong> can contain either a <strong>devicestatus</strong> device event details or a <strong>callstatus</strong> list of call event details.
+    </p> 
+    
+    <example caption=' Event notification for Make Call to user agent application'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader_DDI_6789'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-567896453</id>
+		<changed>State</changed>		        
+	   	<state>CallEstablished</state>
+	   	<direction>Outgoing</direction>	 
+	   	<duration>1500</duration>	   	
+                <features>
+                     <feature id="privacy">false</feature> 
+                     <feature id="hs1">true</feature>                        
+                </features>  	
+	   	<caller>
+	   	     <number>3092</number>
+	   	     <name>Alan Trader</name>
+	   	</caller>
+	   	<called>
+	   	     <number>3050</number>
+	   	     <name>Bill Broker</name>
+	   	</called>
+		<actions>
+		   <ClearConnection/>      
+		   <HoldCall/>   
+		   <PrivateCall/>  
+		   <TransferCall/>		   		   
+		</actions>                        
+	   	<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Outgoing" type="Active" timestamp="Tue May 18 16:12:51 BST 2010"/>
+	   	    <participant jid="tracy.trader@shakespeare.lit" direction="Outgoing" type="Inactive" />
+	   	    <participant jid="tony.money@shakespeare.lit" direction="Outgoing" type="Inactive" />
+		</participants>	   
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 		
+            </call>
+         </callstatus>
+       </item>
+     </items>
+  </event> 
+</message> 
+
+    ]]></example> 
+    
+	<p>
+    	A <strong>devicestatus</strong> event consists of the active <strong>profile</strong> and a list of <strong>features</strong>. Each feature will have an <strong>id</strong> attribute and an optional 
+    	child element with an identifying namespace depending on the type of feature. For example, voice messages have a child element called <strong>voicemessage</strong>.
+    	See <link url='#manage-voice-message'>Manage Voice Message</link> for details. 	
+	Features which effect the overall user experience without affecting a specific call are shown as device events are 
+	published to the default interest of the user's active profile.
+	</p>
+	
+    
+    <example caption='Devicestatus notification sent to user agent application'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader_DDI_6789'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+         <devicestatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#device-status'>
+            <profile>alan.trader_netrix</profile>                    
+            <features>
+	        <feature id="voice_message_36">
+		   <voicemessage xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'>              	   
+		      <msglen>60</msglen>             	      
+		      <status>ok</status>
+		      <statusdescriptor/>
+		      <state>start</state>
+		      <exten/>
+		   </voicemessage>
+	        </feature>             
+            </features>
+         </devicestatus>
+       </item>
+     </items>
+  </event> 
+</message> 
+
+    ]]></example> 
+    
+  </section2>
+
+  <section2 topic='Request Action' anchor='request-action'> 
+            
+    <p>The user agent application can now request any valid action for the end-user. The user agent application does not need any assumed
+    knowledge about the actions and what they really do. That can be passed on to the user interface for the end-user to decide which action to
+    take. The user agent application can check the user profile for a complete list of actions supported (see the <link url='#get-profiles'>Get Profiles</link> section
+    below). The action labels can be used to influence the user interface</p>
+
+    <section3 topic='Input' anchor='request-action-input'> 
+    	<section4 topic='Required' anchor='request-action-input-required'> 
+    		<ol>
+		<li>The <strong>interest</strong> id obtained from the node attrbute of the pubsub telephony event message <![CDATA[<items>]]>.</li>    		    		
+    		<li>The <strong>action</strong> id </li>
+		<li>The <strong>call</strong> id.</li>    		
+		</ol>
+    	</section4>
+	<section4 topic='Optional' anchor='request-action-input-optional'> 
+		<ol>
+		<li>An input called <strong>value1</strong>.</li>    	
+		<li>An input called <strong>value2</strong>.</li>
+		</ol>
+
+		The contents of parameters Value1 and Value2 are determined by each type of feature shown in the table below:
+		<table caption='List of recomended Request Actions with optional value1 and value2 inputs'>
+		<tr><th>Action</th><th>Description</th><th>value1</th><th>value2</th></tr>
+		
+		<tr><td>AnswerCall</td><td>Answers an alerting call on active profile device</td><td></td><td></td></tr>
+		
+		<tr><td>ClearConference</td><td>Clears an active local conference on the device</td><td></td><td></td></tr>
+		
+		<tr><td>ClearConnection</td><td>This request allows the active profile device to be released from a call. In the
+case of a normal two-party call the entire call will be cleared, but in the case of a
+multi-party conference this request will cause just the specified device to be
+removed from the conference, and if the active parrticipants count is down to two, then
+the call will revert to a normal two-party call.</td><td></td><td></td></tr>	
+
+		<tr><td>ClearCall</td><td>Forces all participants off call and disconnects the far party.</td><td></td><td></td></tr>
+		
+		<tr><td>ConferenceCall</td><td>Conferences an existing active call to a local conference bridge on the device.</td><td></td><td></td></tr>			
+		
+		<tr><td>ConsultationCall</td><td>Places an existing active call effectively on hold and initiates an
+new call to the supplied Destination in Value 1. It is often used as a precursor to the
+TransferCall action. Consultation Call with no destination, will cancel an ongoing Consultation Call and resume the original call</td><td>Telephone Number</td><td></td></tr>
+
+		<tr><td>StartVoiceDrop</td><td>Starts playing a pre-recorded voice message or playlist into the active call.</td><td>Voice message or playlist feature Id</td><td></td></tr>	
+
+		<tr><td>StopVoiceDrop</td><td>Stops playing a pre-recorded voice message or playlist on the active call.</td><td>VoiceDrop message or playlist feature Id</td><td></td></tr>	
+
+		<tr><td>HoldCall</td><td>Put the active call on hold.</td><td></td><td></td></tr>	
+		
+		<tr><td>PrivateCall</td><td>Make the active call Private. This also activates the privacy feature for the call</td><td></td><td></td></tr>
+
+		<tr><td>PublicCall</td><td>Make the active private call Public. This also deactivates the privacy feature for the call</td><td></td><td></td></tr>
+	
+		<tr><td>IntercomTransfer</td><td>Transfer the active call to internal user by name.</td><td>JID of transfer target</td><td></td></tr>	
+
+		<tr><td>JoinCall</td><td>Join an active call elsewhere and make it a conference call by becominging an active participant.</td><td></td><td></td></tr>	
+
+		<tr><td>AddThirdParty</td><td>Add a third party destination to an active call and make it a conference call</td><td>Telephone number</td><td></td></tr>	
+
+		<tr><td>RemoveThirdParty</td><td>Remove a third party destination from an active call</td><td>Telephone number</td><td></td></tr>	
+
+		<tr><td>RetrieveCall</td><td>Retrieve a call on hold.</td><td></td><td></td></tr>	
+
+		<tr><td>TransferCall</td><td>Complete a transfer started with ConsultationCall. Release the active profile device from the call.</td><td></td><td></td></tr>	
+
+		<tr><td>SingleStepTransfer</td><td>Transfers a call without
+first using the ConsultationCall action. This allows a call to be transferred in a
+single step, without putting the original call on hold.</td><td>Telephone Number</td><td></td></tr>
+		<tr><td>SendDigits</td><td>Causes dial digits to be sent on an originated call on the active device. Used to make a call in two steps by first selecting a specific or default interest and dialing the phone number when dial tone is available and call is in the originated state.</td><td>Telephone number</td><td></td></tr>	
+		<tr><td>SendDigit</td><td>Causes a DTMF tone to be sent on an existing call at active device.</td><td>Telephone digit</td><td></td></tr>	
+		</table>
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='request-action-output'> 
+	The output is a <strong>callstatus</strong> providing the next telephony event of the call. See <link url='#make-call-output'>Make Call</link> output for details of &lt;callstatus&gt;.
+
+    </section3> 
+    
+    <p><br/></p><p>Following example illustrates an active participant putting the call on hold. The user agent application requests for a command next action with an input Openlink IO Data structure. All other actions are similiar to the following examples shown below.
+    </p>
+    <example caption='User Agent holds call on behalf of an active participant'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='hold-call-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'  
+           node='http://xmpp.org/protocol/openlink:01:00:00#request-action'>
+           
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+	<interest>alan.trader_DDI_6789</interest>
+        <action>HoldCall</action>
+        <call>ol-567896453</call>
+      </in>
+    </iodata>            
+  </command>      
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the service SHOULD process the action.
+    
+    <example caption='TSP returns response for Hold Call to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='hold-call-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#request-action'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-567896453</id>
+		<changed>State</changed>		        
+	   	<state>CallHeld</state>
+	   	<direction>Outgoing</direction>	  
+	   	<duration>48000</duration>	   	
+                 <features>
+                     <feature id="privacy">false</featur> 
+                     <feature id="hs1">false</feature>                      
+                </features>    	
+	   	<caller>
+	   	     <number>3092</number>
+	   	     <name>Alan Trader</name>
+	   	</caller>
+	   	<called>
+	   	     <number>01234567</number>
+	   	     <name />
+	   	</called>
+		<actions>      
+ 		     <RetrieveCall/>   		     
+		</actions>                        	   	
+	   	<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Outgoing" type="Active" timestamp="Tue May 18 16:12:51 BST 2010"/>
+	   	    <participant jid="tracy.trader@shakespeare.lit" direction="Outgoing" type="Inactive" />
+	   	    <participant jid="tony.money@shakespeare.lit" direction="Outgoing" type="Inactive" />
+		</participants>	  
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 		
+            </call>
+         </callstatus>
+       </out>
+     </iodata>           
+  </command> 
+</iq> 
+    ]]></example> 
+                    
+    If there is an active subscription for the interest, the TSP CTI engine which will push the next and subsequent telephony events to the user agent to reflect the state of the call.</p>
+    <example caption='Event notification sent after HoldCall action to user agent application'><![CDATA[ 
+<message from='pubsub.shakespeare.lit'
+    to='user.agent@shakespeare.lit/globe'>    
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader_DDI_6789'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-567896453</id>
+		<changed>State</changed>		        
+	   	<state>CallHeld</state>
+	   	<direction>Outgoing</direction>	
+	   	<duration>48000</duration>  	
+                <features>
+	          <feature id="privacy">false</feature>
+	          <feature id="hs1">true</feature>               
+	        </features> 	
+	   	<caller>
+	   	     <number>3092</number>
+	   	     <name>Alan Trader</name>
+	   	</caller>
+	   	<called>
+	   	     <number>01234567</number>
+	   	     <name />
+	   	</called>
+		<actions>      
+ 		     <RetrieveCall/>   		     
+		</actions>                        	   	
+	   	<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Outgoing" type="Active" timestamp="Tue May 18 16:12:51 BST 2010"/>
+	   	    <participant jid="tracy.trader@shakespeare.lit" direction="Outgoing" type="Inactive" />
+	   	    <participant jid="tony.money@shakespeare.lit" direction="Outgoing" type="Inactive" />
+		</participants>	  
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 		
+            </call>
+         </callstatus>
+       </item>
+     </items>
+  </event> 
+</message> 
+    ]]></example>  
+
+    <example caption='Event notification sent to user agent application for Incoming Call'><![CDATA[ 
+<message from='pubsub.shakespeare.lit'
+    to='user.agent@shakespeare.lit/globe'>    
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader_DDI_6789'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>       
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-23498658</id>
+		<changed>State</changed>		        
+	   	<state>CallDelivered</state>
+	   	<direction>Incoming</direction>
+	   	<duration>0</duration>	   	
+               <features>
+	          <feature id="privacy">false</feature>
+	          <feature id="hs1">true</feature>               
+	        </features> 	
+		<caller>
+		     <number>01234567</number>
+		     <name>Bill Broker</name>
+		</caller>
+		<called>
+		     <number>3092</number>
+		     <name>Alan trader</name>
+		</called> 
+		<actions>
+		   <AnswerCall/>            		   
+		</actions>		
+	   	<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Incoming" type="Inactive" />
+	   	    <participant jid="bill.broker@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="tracy.trader@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="tony.money@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="rick.research@shakespeare.lit" direction="Incoming" type="Inactive"/>
+		</participants>
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 		
+            </call>
+         </callstatus>
+       </item>
+     </items>
+  </event> 
+</message> 
+    ]]></example> 
+    <p>The user agent application requests for action='answerCall' on behalf of a user who answers the call. That user will become an active participant
+    while others remain inactive.</p>
+    <example caption='User agent application answers call on behalf of a user'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='answer-call-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#request-action'/> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+	<interest>alan.trader_DDI_6789</interest>      
+        <action>AnswerCall</action>
+        <call>ol-23498658</call>
+      </in>
+    </iodata>            
+            
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the service handles the requested action.</p>
+
+    <example caption='TSP returns response for Answer Call to user agent application on behalf of a user'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='answer-call-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#request-action'
+           status='completed'>            
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-23498658</id>
+		<changed>State</changed>		        	   	
+	   	<state>CallEstablished</state>  
+	   	<direction>Incoming</direction>	 
+	   	<duration>1200</duration>	   	
+	        <features>
+	          <feature id="privacy">false</feature>
+	          <feature id="hs1">true</feature>               
+	        </features>                 
+		<caller>
+		     <number>01234567</number>
+		     <name></name>
+		</caller>
+		<called>
+		     <number>3092</number>
+		     <name>Alan trader</name>
+		</called>
+		<actions>		
+		   <ClearConnection/>      
+		   <HoldCall/>   
+		   <PrivateCall/>  
+		   <TransferCall/> 		   
+		</actions>
+		<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Incoming" type="Active" timestamp="Tue May 18 16:12:51 BST 2010"/>
+	   	    <participant jid="bill.broker@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="tracy.trader@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="tony.money@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="rick.research@shakespeare.lit" direction="Incoming" type="Inactive"/>
+		</participants>	  
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 		
+            </call>         
+         </callstatus>
+       </out>
+     </iodata>           
+  </command> 
+</iq>  
+    ]]></example> 
+        
+
+    <p>When the call terminates, the TSP notifies the user agent application with a <![CDATA[<state>ConnectionCleared</state>]]> element.</p>
+    <example caption='Call Termination notification'><![CDATA[ 
+<message from='pubsub.shakespeare.lit'
+    to='user.agent@shakespeare.lit/globe'>    
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader_primary_ddi'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-23498658</id>
+		<changed>State</changed>		        	   	
+		<state>ConnectionCleared</state>     
+	   	<direction>Incoming</direction>	 
+	   	<duration>100200</duration>	   	
+	        <features>
+	          <feature id="privacy">false</feature>
+	          <feature id="hs1">true</feature>               
+	        </features>                 
+		<caller>
+		     <number>01234567</number>
+		     <name></name>
+		</caller>
+		<called>
+		     <number>3092</number>
+		     <name>Alan trader</name>
+		</called>
+		<actions/>
+		<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Incoming" type="Inactive" timestamp="Tue May 18 16:12:51 BST 2010"/>
+	   	    <participant jid="bill.broker@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="tracy.trader@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="tony.money@shakespeare.lit" direction="Incoming" type="Inactive"/>
+	   	    <participant jid="rick.research@shakespeare.lit" direction="Incoming" type="Inactive"/>
+		</participants>	  
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 		
+            </call>                
+         </callstatus>               
+       </item>
+     </items>
+  </event> 
+</message>  
+    ]]></example>    
+       
+  </section2> 
+  
+  <section2 topic='Make Intercom Call' anchor='make-intercom-call'> 
+    
+    <p>This command is used to initiate a outbound call directly to another user with an XMPP identity, the user agent application has to provide the end user JID, the target user JID and an optional list of
+    features. The destination is optional and will be ignored if a GroupIntercom feature is included in the list of features.</p>
+
+    <section3 topic='Input' anchor='make-intercom-input'> 
+    	<section4 topic='Required' anchor='make-intercom-call-input-required'> 
+    	<ol>
+    		<li>The <strong>profile</strong> id of the end user to be used for the call. </li>
+		<li>The fully qualified XMPP <strong>destination</strong> jid of the target user (not required if GroupIntercom feature Id is provided in list of features). </li>    		
+    	</ol>
+    	</section4>
+	<section4 topic='Optional' anchor='make-intercom-call-input-optional'> 
+    	<ol>	
+		<li>A list of <strong>features</strong> to be applied to the device or line for the call. 
+		Each feature must contain the feature <strong>id</strong></li> and <strong>value1</strong> and <strong>value2</strong> as applicable.
+		See <link url='#set-feature'>Set Feature</link> for feature types and values.
+    	</ol>
+    	</section4>
+    </section3>
+    <section3 topic='Output' anchor='make-intercom-call-output'> 
+    	The output is a <strong>callstatus</strong> providing the next telephony event of the call. See <link url='#make-call-output'>Make Call</link> output for details of &lt;callstatus&gt;.
+    </section3> 
+
+     <p>The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#make-intercom-call".</p>
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User Agent makes an intercom call on behalf of user'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='make-intercom-call-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#make-intercom-call'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <profile>alan.trader_netrix</profile>  
+        <destination>bill.broker@shakespeare.lit</destination> 
+        <features>
+           <feature>
+              <id>hs2</id>
+	      <value1>true</value1>
+	   </feature>
+        </features>
+      </in>
+    </iodata>
+  </command>
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the telephony action and publish the appropriate telephony events.</p> 
+    <example caption='TSP returns response for Make Intercom Call to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='make-intercom-call-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#make-intercom-call'
+           status='completed'> 
+           
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <callstatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#call-status' busy='false'>
+            <call>
+	   	<id>ol-567896453</id>
+		<changed>State</changed>		        
+	   	<state>CallEstablished</state>
+	   	<direction>Outgoing</direction>	 
+	   	<duration>685</duration>	   	
+                <features>
+	          <feature id="privacy">false</feature>
+	          <feature id="hs1">true</feature>               
+	        </features>   	
+	   	<caller>
+	   	     <number>3092</number>
+	   	     <name>Alan Trader</name>
+	   	</caller>
+	   	<called>
+	   	     <number>3050</number>
+	   	     <name>Bill Broker</name>
+	   	</called>
+		<actions>
+		   <ClearConnection/>      
+		   <HoldCall/>   
+		   <PrivateCall/>  
+		   <TransferCall/>  
+		</actions>                        
+	   	<participants>
+	   	    <participant jid="alan.trader@shakespeare.lit" direction="Outgoing" type="Active" timestamp="Tue May 18 16:12:54 BST 2010"/>
+	   	    <participant jid="bill.broker@shakespeare.lit" direction="Incoming" type="Active" timestamp="Tue May 18 16:12:55 BST 2010" />
+		</participants>	   
+		<profile>alan.trader_netrix</profile>  
+		<interest>alan.trader_DDI_6789</interest> 		
+            </call>         
+         </callstatus>
+       </out>
+     </iodata>            
+  </command> 
+</iq> 
+    ]]></example>                 
+
+  </section2>
+  
+
+  
+  <section2 topic='Manage Voice Message' anchor='manage-voice-message'> 
+    
+    <p>This command is used to perform service management of voice messages that can be used with the StartDropVoice request action. See <link url='#request-action'>Request Action</link>.
+    Depending on the TSP, this command may initiate an incoming or outgoing call to or from the voice message recorder service to perform the required action.</p>
+
+    <section3 topic='Input' anchor='manage-voice-message'> 
+    	<section4 topic='Required' anchor='manage-voice-message-input'> 
+		<ol>
+    		   <li>The <strong>profile</strong> id</li>
+		   <li>The <strong>action</strong> required. </li>	    		   
+		    <li>A list of <strong>features</strong> to be used for the actions. Each <strong>feature</strong> must contain the 
+		    <strong>id</strong> of any voice message or voice message playlist allocated to the user and discovered with the <link url='#get-features'>Get Features</link> command. <br/>
+		    The features list is NOT REQUIRED to record a new message but MUST be provided to overwrite an existing voice message and with all other actions.<br />		    
+		    </li>    		   		   
+		</ol>  
+		
+    	</section4>
+	<section4 topic='Optional' anchor='manage-voice-message-input-optional'> 
+		<ol>  	
+		   <li>The optional <strong>label</strong> for the voice message or playlist</li>  		   
+		</ol>  
+    	</section4>
+    	
+	The supported actions include:
+	<table caption='List of Voice Message Management Actions'>
+		<tr><th>Action</th><th>Description</th><th>Label</th><th>List of Features</th></tr>
+		<tr><td>Create</td><td>Create a voice message playlist</td><td>Playlist label</td><td></td></tr>						
+		<tr><td>Record</td><td>Records a new message to replace any existing message. The old message is kept for audit purposes.</td><td>Message label</td><td>Single Feature</td></tr>
+		<tr><td>Edit</td><td>Replace only the voice message or voice message playlist label.</td><td>Message label</td><td>Single Feature</td></tr>
+		<tr><td>Playback</td><td>Playback recorded messages or voice message playlists</td><td></td><td></td></tr>
+		<tr><td>Save</td><td>Save recorded messages</td><td></td><td></td></tr>	
+		<tr><td>Archive</td><td>Move voice messages from the online store to the offline store.</td><td></td><td></td></tr>
+		<tr><td>Delete</td><td>Delete voice messages or a voice message playlists</td><td></td><td></td></tr>
+		<tr><td>Query</td><td>Return the details of voice messages or playlists</td><td></td><td></td></tr>			
+	</table>    	
+    	
+    </section3>
+    <section3 topic='Output' anchor='manage-voice-message-output'> 
+
+    The output is <strong>devicesstatus</strong>, consisting of the active <strong>profile</strong>, <strong>features</strong> child element which contains a the <strong>feature</strong> element representing the voice message.
+    The feature element contains the feature <strong>id</strong> and a child <strong>voicemessage</strong> element with detail information about the voice message.<br/>
+
+	<table caption='voicemessage element details'>
+	<tr><th>Element</th><th>Description</th><th>Values</th></tr>			
+	<tr><td>msglen</td><td>The length of the voice message in seconds</td><td>Number</td></tr>
+	<tr><td>status</td><td>Status of voice message after action</td><td>ok,error,warn,unknown</td></tr>	
+	<tr><td>statusdescriptor</td><td>Textual description of status</td><td>Text: record,playback,voicedrop</td></tr>	
+	<tr><td>state</td><td>The current state of voice message due to action</td><td>start,stop</td></tr>		
+	<tr><td>sequence</td><td>The sequence number of the message in a playlist. For solo messages, it will have value 1</td><td>Number</td></tr>	
+	<tr><td>amdetect</td><td>Flag indicationg if an answer machine was detected at the far party</td><td>true, false</td></tr>	
+	<tr><td>exten</td><td>The internal telephone number associated with the voice message</td><td>Dialable telephone number</td></tr>
+	<tr><td>creationdate</td><td>The creation date of the voice message</td><td>Date</td></tr>		
+	</table> 
+        <p>The namespace for <strong>voicemessage</strong> SHOULD be 'http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'.</p>
+    
+    </section3> 
+
+     <p>The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#manage-voice-message".</p>
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User Agent requests for a new voice message recording on behalf of user'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='manage-voice-message-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-message'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+         <profile>alan.trader_netrix</profile>      
+         <action>record</action>
+         <label>Invitation to watch cricket at the oval</label>         
+      </in>
+    </iodata>
+  </command>            
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the Voice Message action and return a response.</p> 
+    <example caption='TSP returns response for Record Voice Message to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='manage-voice-message-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-message'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <devicestatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#device-status'>
+            <profile>alan.trader_netrix</profile>           
+            <features>
+               <feature id="voice_message_36">
+               	   <voicemessage xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'>               	   
+               	      <msglen/>            	      
+               	      <status>ok</status>
+               	      <statusdescriptor />
+               	      <state>stop</state>
+               	      <exten>64567</exten>
+               	   </voicemessage>
+               </feature>               
+            </features>
+         </devicestatus>  
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example>  
+    
+    <p>The voice message response will include a feature Id for the new voice message as well as a telephone extension which can be used with
+    the <link url='#make-call-input'>Make Call</link> command to call the voice message IVR system to actually record the message. 
+    Voice message devicestatus event messages will pushed to the default interest of the active user profile to notify the user of the recording progress.
+    </p>
+
+
+
+    <example caption='User Agent requests for a voice message re-recording of voice_message_36 on behalf of user'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='manage-voice-message-2'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-message'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+         <profile>alan.trader_netrix</profile>   
+	 <features>
+	     <feature>
+	     	<id>voice_message_36</id>	     	
+	     </feature> 	     
+	 <features>     
+         <action>record</action>   
+         <label>Invitation to watch footie</label>           
+      </in>
+    </iodata>
+  </command>            
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the Voice Message action and return a response.</p> 
+    <example caption='TSP returns response for Record Voice Message to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='manage-voice-message-2'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-message'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <devicestatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#device-status'>
+            <profile>alan.trader_netrix</profile>           
+            <features>
+               <feature id="voice_message_36">
+               	   <voicemessage xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'>               	   
+               	      <msglen/>            	      
+               	      <status>ok</status>
+               	      <statusdescriptor />
+               	      <state>stop</state>
+               	      <exten>64568</exten>
+               	   </voicemessage>
+               </feature>               
+            </features>
+         </devicestatus>  
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+    
+    <example caption='User Agent queries a list of voice messages on behalf of user'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='manage-voice-message-3'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-message'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+         <profile>alan.trader_netrix</profile>   
+	 <features>
+	     <feature>
+	     	<id>voice_message_35</id>	     	
+	     </feature>   
+	     <feature>
+	     	<id>voice_message_36</id>	     	
+	     </feature> 	     
+	 <features>
+         <action>query</action>      
+      </in>
+    </iodata>
+  </command>            
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the Voice Message action and return a response.</p> 
+    <example caption='TSP returns response for Record Voice Message to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='manage-voice-message-3'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-message'
+           status='completed'> 
+     <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+       <out>
+         <devicestatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#device-status'>
+            <profile>alan.trader_netrix</profile>           
+            <features>
+               <feature id="voice_message_35">
+               	   <voicemessage xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'>               	   
+               	      <msglen>35<msglen>
+               	      <status>ok</status>
+               	      <statusdescriptor />
+               	      <state>stop</state>
+               	      <exten/>
+               	   </voicemessage>
+               </feature>     
+               
+               <feature id="voice_message_36">
+               	   <voicemessage xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'>               	   
+               	      <msglen>15<msglen>
+               	      <status>ok</status>
+               	      <statusdescriptor />
+               	      <state>stop</state>
+               	      <exten/>
+               	   </voicemessage>
+               </feature>                
+            </features>
+         </devicestatus>  
+       </out>
+     </iodata>
+  </command> 
+</iq> 
+    ]]></example>     
+
+    <example caption='Voice message devicestatus notification sent to user agent application at begining of voice message recording'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader_primary_ddi'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+         <devicestatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#device-status'>
+            <profile>alan.trader_netrix</profile>                    
+            <features>
+               <feature id="voice_message_36">
+               	   <voicemessage xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'>              	   
+               	      <msglen/>             	      
+               	      <status>ok</status>
+               	      <statusdescriptor />
+               	      <state>start</state>
+               	      <exten>64567</exten>
+               	   </voicemessage>
+               </feature>            
+            </features>
+         </devicestatus>
+       </item>
+     </items>
+  </event> 
+</message> 
+
+    ]]></example>      
+    
+    <example caption='Voice message devicestatus notification sent to user agent application at end of voice message recording'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader_primary_ddi'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+         <devicestatus xmlns='http://xmpp.org/protocol/openlink:01:00:00#device-status'>
+            <profile>alan.trader_netrix</profile>                    
+            <features>
+               <feature id="voice_message_36">
+               	   <voicemessage xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-message'>              	   
+               	      <msglen>180</msglen>             	      
+               	      <status>ok</status>
+               	      <statusdescriptor />
+               	      <state>stop</state>
+               	      <exten>64567</exten>
+               	   </voicemessage>
+               </feature>            
+            </features>
+         </devicestatus>
+       </item>
+     </items>
+  </event> 
+</message> 
+
+    ]]></example>   
+         
+
+  </section2>
+
+
+  <section2 topic='Manage Voice Bridge' anchor='manage-voice-bridge'> 
+    <p>This command is used to provide voice bridging. 
+    This is the ability of a third party to initiate and manage calls between a first and second party or 
+    between multiple parties. The voice bridge can either bridge calls directly between two call participants
+    or use internal audio conferences to bridge multiple call participants. 
+    These internal conferences are dynamic in nature and their management is outside the scope of this specification.
+    The voice bridge also requires the TSP to have a reserved pool of reusable dynamic interests that can be leased on demand
+    to service the call control requirements of voice bridging.
+    <p/>
+    The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge".
+    </p>
+    <section3 topic='Input' anchor='manage-voice-bridge-input'> 
+    	<section4 topic='Required' anchor='manage-voice-bridge-input-required'> 
+    		<ol>
+   		  <li>The <strong>jid</strong> id of the end-user requesting for voice bridging</li>       		
+ 		  <li>A list of <strong>actions</strong> being requested. Each <strong>action</strong> being requested consists of 
+ 		  a <strong>name</strong>, input <strong>value1</strong> and input <strong>value2</strong> depending on the action being requested. See table below.
+		  </li>
+		</ol>
+		
+		<table caption='Voice Bridge Request Actions and associated Inputs'>
+		<tr><th>Action Name</th><th>Description</th><th>1st<br/>Input</th><th>2nd<br/>Input</th></tr>			
+		<tr><td>SetPhoneNo</td><td>Specify the phone number of a participant</td><td>Participant Id</td><td>Phone Number</td></tr>			
+		<tr><td>SetConference</td><td>Associate a conference with a participant</td><td>Participant Id</td><td>Conference Id</td></tr>			
+		<tr><td>SetIncomingInterest</td><td>Associate an Openlink Interest with a participant for incoming calls.</td><td>Participant Id</td><td>Interest Id</td></tr>			
+		<tr><td>SetOutgoingInterest</td><td>Associate an Openlink Interest with a participant for outgoing calls.</td><td>Participant Id</td><td>Interest Id</td></tr>			
+		<tr><td>Set2ndPartyPhoneNo</td><td>Associate a second party phone number with a participant to be used with an outgoing interest.</td><td>Participant Id</td><td>Phone Number</td></tr>			
+		<tr><td>MakeCall</td><td>Bridge an outgoing call between a participant and a second party or a conference</td><td>Participant Id</td><td></td></tr>			
+		<tr><td>BridgeCall</td><td>Bridge any incoming call to a participant's interest with a second party or a conference.</td><td>Participant Id</td><td>Caller Id</td></tr>			
+		<tr><td>SendDTMF</td><td>Send DTMF to second party</td><td>Participant Id</td><td>DTMF key</td></tr>			
+		<tr><td>TransferCall</td><td>Transfer a participant to another conference</td><td>Participant Id</td><td>Conference Id</td></tr>			
+		<tr><td>MigrateCall</td><td>Migrate a participant to a new phone number</td><td>Participant Id</td><td>Phone Number</td></tr>			
+		<tr><td>RedirectCall</td><td>Redirect a second party to a new phone number</td><td>Participant Id</td><td>Phone Number</td></tr>			
+		<tr><td>PlayVoiceMessage</td><td>Play a voice message to a second party or all other participants in a conference</td><td>Participant Id</td><td>Voice Message Feature Id</td></tr>			
+		<tr><td>CancelCall</td><td>Terminate a participant's call</td><td>Participant Id</td><td></td></tr>			
+		</table> 
+
+		<p/>
+		A <strong>Phone Number</strong> is either a dialable telephone number or a SIP URI. A <strong>Conference Id</strong> is 
+		a universal unique identifier supplied by for a conference.
+		A <strong>Participant Id</strong> is also a universal unique user identifier supplied by an end-user for a participant.
+		A <strong>Voice Message Feature Id</strong> is a VoiceMessage or VoiceMessagePlaylist feature id.
+		A <strong>Caller Id</strong> is a regular expression (regex) to match caller identification on incoming calls.
+	
+    	</section4>
+	<section4 topic='Optional' anchor='manage-voice-bridge-input-optional'> 
+    		<ol>
+    		<li>None</li>    			
+		</ol>
+    	</section4>    	
+    </section3>    
+    <section3 topic='Output' anchor='manage-voice-bridge-output'> 
+    	<p>
+    	There is no output unless an error occurs (see the <link url='#errors'>Error Handling</link> section below)  
+    	</p>
+    	
+    Voice Bridge call event events are published as pubsub &lt;voicebridge&gt; messages to the user <strong>jid</strong> node name 
+    with the identifying namespace "http://xmpp.org/protocol/openlink:01:00:00/features#voice-bridge".<p/>
+    The voice bridge <strong>voicebridge</strong> event will consist of the following details of the voice bridge call event.    
+
+	<table caption='voicebridge element names'>
+	<tr><th>Element</th><th>Description</th><th>Values</th></tr>	
+	<tr><td>jid</td><td>Requesting user <strong>JID</strong></td><td>JID</td></tr>
+	<tr><td>eventtype</td><td>The event type</td><td>state_changed, timeout, migrated, migrated_fail, transferred, started_speaking, stopped_speaking, dtmf_key</td></tr>			
+	<tr><td>dtmf</td><td>DTMF key pressed</td><td>0-9, *,#</td></tr>		
+	<tr><td>participants</td><td>Number of Participants</td><td>Numeric</td></tr>	
+	<tr><td>callstate</td><td>New state for state_changed event</td><td>invited,answered,established,ending,ended</td></tr>			
+	<tr><td>conference</td><td>Conference Identifier</td><td>Alphanumeric</td></tr>	
+	<tr><td>participant</td><td>Participant Identifier</td><td>Alphanumeric</td></tr>			
+	<tr><td>callinfo</td><td>Additional call information</td><td>Text</td></tr>			
+	<tr><td>eventinfo</td><td>Additional event information</td><td>Text</td></tr>		
+	</table> 
+    
+    </section3>  
+    
+     <p>The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge".</p>
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    
+    <example caption='User Agent requests to bridge a direct call between two SIP phones'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='manage-voice-bridge-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+         <jid>alan.trader@shakespeare.lit</jid>
+         <actions>       
+            <action>
+                <name>SetPhoneNo</name>
+                <value1>alan.trader_netrix_1</value1>
+                <value2>sip:67289@ccm.shakespeare.lit</value2>                 
+	    </action>	
+            <action>
+                <name>Set2ndPartyPhoneNo</name>
+                <value1>alan.trader_netrix_1</value1>
+                <value2>sip:67290@ccm.shakespeare.lit</value2>                 
+	    </action>	
+            <action>
+                <name>MakeCall</name>
+                <value1>alan.trader_netrix_1</value1>               
+	    </action>		    
+         </actions>        
+      </in>
+    </iodata>
+  </command>            
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the Voice Bridge actions and return an empty response.</p> 
+    <example caption='TSP returns response to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='manage-voice-bridge-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge'
+           status='completed'> 
+
+  </command> 
+</iq> 
+    ]]></example>  
+    
+    <example caption='Voice Bridge notification sent to user agent application when call is bridged'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader@shakespeare.lit'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+	   <voicebridge xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-bridge'>    
+	      <jid>alan.trader@shakespeare.lit'</jid>                                 	   
+	      <eventtype>state_changed<eventtype>
+	      <callstate>established</callstate>
+	      <conference/>
+	      <participant>alan.trader_netrix_1</participant>                   	      
+	   </voicebridge>
+       </item>
+     </items>
+  </event> 
+</message> 
+
+    ]]></example>  
+
+    <example caption='User Agent requests to bridge three SIP phones to a conference'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='manage-voice-bridge-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+         <jid>alan.trader@shakespeare.lit</jid>    
+         <actions>	    
+            <action>
+                <name>SetPhoneNo</name>
+                <value1>alan.trader_netrix_1</value1>
+                <value2>sip:67289@ccm.shakespeare.lit</value2>                 
+	    </action>	
+            <action>
+                <name>SetConference</name>
+                <value1>alan.trader_netrix_1</value1>
+                <value2>three_amigos</value2>                 
+	    </action>	
+            <action>
+                <name>MakeCall</name>
+                <value1>alan.trader_netrix_1</value1>               
+	    </action>	
+	    
+            <action>
+                <name>SetPhoneNo</name>
+                <value1>bill.broker_netrix_1</value1>
+                <value2>sip:67290@ccm.shakespeare.lit</value2>                 
+	    </action>	
+            <action>
+                <name>SetConference</name>
+                <value1>bill.broker_netrix_1</value1>
+                <value2>three_amigos</value2>                 
+	    </action>	
+            <action>
+                <name>MakeCall</name>
+                <value1>bill.broker_netrix_1</value1>             
+	    </action>	 
+	    
+            <action>
+                <name>SetPhoneNo</name>
+                <value1>tracy.research_netrix_1</value1>
+                <value2>sip:67291@ccm.shakespeare.lit</value2>                 
+	    </action>	
+            <action>
+                <name>SetConference</name>
+                <value1>tracy.research_netrix_1</value1>
+                <value2>three_amigos</value2>                 
+	    </action>	
+            <action>
+                <name>MakeCall</name>
+                <value1>tracy.research_netrix_1</value1>           
+	    </action>
+	    
+         </actions>        
+      </in>
+    </iodata>
+  </command>            
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the Voice Bridge actions and return an empty response.</p> 
+    <example caption='TSP returns response to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='manage-voice-bridge-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge'
+           status='completed'> 
+           
+  </command> 
+</iq> 
+    ]]></example>  
+    
+    <p>Assuming that the User Agent subscribes to pubsub nodes of the requesting user (alan.trader@shakespeare.lit),
+    then then the following call event messages will be recieved when the calls get bridged.
+    </p>
+    
+    <example caption='Voice Bridge voicebridge notification sent to user agent application when first participant is bridged'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader@shakespeare.lit'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+            <voicebridge xmlns='http://xmpp.org/protocol/openlink:01:00:00#voice-bridge'>
+            	<jid>alan.trader@shakespeare.lit'</jid>                                	             	      
+		<eventtype>state_changed<eventtype>
+		<callstate>established</callstate>
+		<conference>three_amigos</conference>               	      
+		<participant>alan.trader_netrix_1</participant>                   	      
+            </voicebridge>
+       </item>
+     </items>
+  </event> 
+</message> 
+    ]]></example>  
+    
+    <example caption='Voice Bridge voicebridge notification sent to user agent application when second participant is bridged'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader@shakespeare.lit'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>              	   
+	   <voicebridge xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-bridge'>   
+	      <jid>alan.trader@shakespeare.lit'</jid>                                     	   
+	      <eventtype>state_changed<eventtype>
+	      <callstate>established</callstate>
+	      <conference>three_amigos</conference>               	      
+	      <participant>bill.broker_netrix_1</participant>                   	      
+	   </voicebridge>              	   
+       </item>
+     </items>
+  </event> 
+</message> 
+    ]]></example>  
+    
+    <example caption='Voice Bridge voicebridge notification sent to user agent application when third participant is bridged'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader@shakespeare.lit'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+	   <voicebridge xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-bridge'>     
+	      <jid>alan.trader@shakespeare.lit'</jid>                                     	   
+	      <eventtype>state_changed<eventtype>
+	      <callstate>established</callstate>
+	      <conference>three_amigos</conference>               	      
+	      <participant>tracy.research_netrix_1</participant>                   	      
+	   </voicebridge>               	   
+       </item>
+     </items>
+  </event> 
+</message> 
+
+    ]]></example>     
+  </section2>
+
+
+  <section2 topic='Manage Interests' anchor='manage-interests'> 
+    <p>This command is used to enable a user agent application manage dynamic directory number interests. Dynamic interests are allocated to end-users on demand from a 
+    reserved pool by the TSP. The allocation period is controlled by a lease which allows interests to be allocated for immediate use, session use or indefinite use. 
+    An indefinte lease will require an explicit deallocate action while immediate and session leases will expire after a timeout and user logoff respectfully.
+    Dynamic interests will be mostly used for third party call control like voice bridging.
+    <p/>
+    The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#manage-interests".</p>
+    <section3 topic='Input' anchor='manage-interests-input'> 
+    	<section4 topic='Required' anchor='manage-interests-input-required'> 
+    		<ol>
+   		  <li>The <strong>jid</strong> id of the end-user requesting for a dynamic interest</li>  
+    		  <li>The <strong>action</strong> required. This is can be Allocate or Deallocate.</li>     		  
+    		  <li>The <strong>lease</strong> period. This is can be Immediate, Session or Indefinite.</li>    	      		  
+		</ol>
+    	</section4>
+	<section4 topic='Optional' anchor='manage-interests-input-optional'> 
+    	   None.
+    	</section4>    	
+    </section3>    
+    <section3 topic='Output' anchor='manage-interests-output'> 
+    	<p>The output is the requested <strong>interest</strong> element contained within a <strong>interests</strong> element.
+    	See <link url='#get-interests-output'>Get Interests</link> output for details of &lt;interest&gt;. 
+    	</p>
+    </section3>     
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application requests on behalf of an end-user for a dynamic directory number to bridge incoming calls to a mobile'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='manage-interests-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-interests'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <jid>alan.trader@shakespeare.lit</jid>
+        <action>Allocate</action>
+        <lease>Indefinite</lease>
+       </in>
+    </iodata>
+  </command>          
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP completes the request and returns an allocated dynamic interest</p>
+    <example caption='TSP responds to Query Feature command request'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='manage-interests-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-interests'
+           status='completed'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+      <out>
+         <interests xmlns='http://xmpp.org/protocol/openlink:01:00:00/interests'>
+	    <interest id="alan.trader_673456" type="DirectoryNumber" label="Extension 673456" value="673456" />	
+	 </interests>	    
+      </out>
+    </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+    
+    <example caption='User Agent requests voice bridge to bridge all incoming calls of the leased interest to a mobile phone'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='manage-voice-bridge-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+         <jid>alan.trader@shakespeare.lit</jid>
+         <actions>       
+            <action>
+                <name>SetIncomingInterest</name>
+                <value1>alan.trader_extend_mobile</value1>
+                <value2>alan.trader_673456</value2>                 
+	    </action>	
+            <action>
+                <name>Set2ndPartyPhoneNo</name>
+                <value1>alan.trader_extend_mobile</value1>
+                <value2>sip:07712045853@ccm.shakespeare.lit</value2>                 
+	    </action>	
+            <action>
+                <name>BridgeCall</name>
+                <value1>alan.trader_extend_mobile</value1>               
+                <value1>*</value1>                   
+	    </action>		    
+         </actions>        
+      </in>
+    </iodata>
+  </command>            
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP SHOULD process the Voice Bridge actions and return an empty response.</p> 
+    <example caption='TSP returns response to user agent application'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='manage-voice-bridge-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#manage-voice-bridge'
+           status='completed'> 
+
+  </command> 
+</iq> 
+    ]]></example>  
+    
+    <example caption='Voice Bridge notification sent to user agent application whenever an incoming call is bridged to mobile phone'><![CDATA[ 
+<message from='pubsub.shakespeare.lit' to='user.agent@shakespeare.lit/globe'> 
+ <event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='alan.trader@shakespeare.lit'>
+      <item id='ba49252aaa4f5d320c24d3766f0bdcade78c78d3'>
+	   <voicebridge xmlns='http://xmpp.org/protocol/openlink:01:00:00/features#voice-bridge'>    
+	      <jid>alan.trader@shakespeare.lit'</jid>                                 	   
+	      <eventtype>state_changed<eventtype>
+	      <callstate>established</callstate>
+	      <conference/>
+	      <participant>alan.trader_extend_mobile</participant>                   	      
+	   </voicebridge>
+       </item>
+     </items>
+  </event> 
+</message> 
+
+    ]]></example>  
+    
+  </section2>
+  
+  <section2 topic='Set Feature' anchor='set-feature'> 
+    <p>This command is used to change the value of a modifible Openlink device feature on behalf of an end-user. The feature id must be provided as input as well as any additional parameters required to activate the feature.<p/> The command node for this use case SHOULD be
+    "http://xmpp.org/protocol/openlink:01:00:00#set-features".</p>
+    <section3 topic='Input' anchor='set-feature-input'> 
+    	<section4 topic='Required' anchor='set-feature-input-required'> 
+    		<ol>
+    		<li>The <strong>profile</strong> id</li>    	
+    		<li>The <strong>feature</strong> id</li>
+		<li>Input <strong>value1</strong></li>    	
+		</ol>
+    	</section4>
+	<section4 topic='Optional' anchor='set-feature-input-optional'> 
+		<ol>
+		<li>Input <strong>value2</strong><p>Input value2 is only applicable for CallForward, CallBack and SoftPhone. </p></li>
+		</ol>
+
+		The contents of parameters Value1 and Value2 are determined by each type of feature shown in the table below:
+		<table caption='List of Features that can be set with value1 and value2 inputs as applicable'>
+		<tr><th>Feature Type</th><th>Description</th><th>value1</th><th>value2</th></tr>		
+		<tr><td>MessageWaiting</td><td>Status of the device message waiting indicator</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>MicrophoneMute</td><td>Status of the microphone mute</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>SpeakerMute</td><td>Status of the speaker mute</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>SpeakerChannel</td><td>Activate/deactive speaker channel for active call</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>RingerStatus</td><td>Status of the device audible ringing</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>Privacy</td><td>Set device privacy</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>Handset</td><td>Set device active handset</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>DoNotDisturb</td><td>Status of device DND</td><td>'true' or 'false'</td><td></td></tr>	
+		<tr><td>MicrophoneGain</td><td>Set microphone volume</td><td>Microphone volume(percentage)</td><td></td></tr>	           
+		<tr><td>CallForward</td><td>Set call forwarding</td><td>Interest Id</td><td>Telephone Number.<br/> When provided, it specifiies the destination for the call forwarding and when omitted, it specifies that call forwarding is disabled.</td></tr>	           
+		<tr><td>CallBack</td><td>Set callback for remote handset</td><td>'true' or 'false'</td><td>Telephone Number</td></tr>	           
+		<tr><td>Conference</td><td>Indicates that conference resources should be allocated for the call in order to support line sharing actions</td><td>'true' or 'false'</td><td></td></tr>		
+		<tr><td>SoftPhone</td><td>Device features can be simulated</td><td>Device feature id to be set (depends on device)</td><td>Value to be set</td></tr>		
+		</table>
+    	</section4>    	
+    </section3> 
+    <section3 topic='Output' anchor='set-feature-output'> 
+    	None.
+    </section3>     
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application sets callback for a remote handset to a mobile phone'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='set-features-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#set-features'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <profile>alan.trader_netrix</profile>
+        <feature>callback_1</feature>
+        <value1>true</value1>
+        <value2>+44788214188</value2>        
+      </in>
+    </iodata>           
+  </command>
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP completes the request. There is no
+    output IO Data.</p>
+    <example caption='TSP responds to Set Feature command request'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='set-features-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#set-features'
+           status='completed'> 
+  </command> 
+</iq> 
+    ]]></example> 
+  </section2>
+
+
+  <section2 topic='Query Features' anchor='query-features'> 
+    <p>This command is used to enable a user agent application query the status of all telephony device features on behalf of an end-user.<p/>
+    The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#query-features".</p>
+    <section3 topic='Input' anchor='query-features-input'> 
+    	<section4 topic='Required' anchor='query-features-input-required'> 
+    		<ol>
+    		<li>The <strong>profile</strong> id.</li>    	
+		</ol>
+    	</section4>
+	<section4 topic='Optional' anchor='query-features-input-optional'> 
+    	   None.
+    	</section4>    	
+    </section3>    
+    <section3 topic='Output' anchor='query-features-output'> 
+        <ol>
+    	<li>A list of features. Each <strong>feature</strong> will have an <strong>id</strong>, <strong>value1</strong> and <strong>value2</strong> attributes as shown above in <link url='#set-feature-input-optional'>Set Feature Input</link> </li>
+    	</ol>
+    </section3>     
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application queries device features associated with a profile'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='query-features-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#query-features'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <profile>alan.trader_netrix</profile>
+       </in>
+    </iodata>
+  </command>          
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP completes the request.
+    The current status of each device feature is returned as output IO Data.</p>
+    <example caption='TSP responds to Query Feature command request'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+    id='query-features-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#query-features'
+           status='completed'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+      <out>
+        <features>
+           <feature id="message_waiting" value1="true" />
+        </features>
+      </out>
+    </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+  </section2>
+  
+
+  <section2 topic='Get Call History' anchor='get-call-history'> 
+    <p>This command is used to enable a user agent application retrieve stored call records on behalf of an end-user.<p/>
+    The command node for this use case SHOULD be "http://xmpp.org/protocol/openlink:01:00:00#get-call-history".</p>
+    <section3 topic='Input' anchor='get-call-history-input'> 
+    	<section4 topic='Required' anchor='get-call-history-input-required'> 
+    		<ol>
+    		<li>The <strong>jid</strong> of the end-user</li>    	
+		</ol>
+    	</section4>
+	<section4 topic='Optional' anchor='get-call-history-input-optional'> 
+    		<ol>
+    		<li>Text that can be used to match the telephony <strong>caller</strong></li>    	
+    		<li>Text that can be used to match the telephony user <strong>called</strong></li>      		
+    		<li>The type of call. Expected values are <strong>in</strong>, <strong>out</strong> or <strong>missed</strong></li>  
+		<li>Date text in format mm/dd/yyyy of <strong>fromdate</strong></li>   		
+		<li>Date text in format mm/dd/yyyy of <strong>uptodate</strong></li> 		
+		<li>To support paging, a numeric value of which call record to <strong>start</strong> the retrieval from</li> 			
+		<li>To support paging, a numeric value to specify the <strong>count</strong> of records in the retrieval</li> 		
+		</ol>
+    	</section4>    	
+    </section3>    
+    <section3 topic='Output' anchor='get-call-history-output'> 
+    The output is <strong>callhistory</strong>, consisting multiple <strong>call</strong> child elements. Each <strong>call</strong> element contains the call <strong>id</strong>,
+    <strong>changed</strong> code, <strong>state</strong>, <strong>direction</strong>,  <strong>duration</strong>, <strong>caller</strong> details, list of <strong>features</strong>,
+    <strong>called</strong> party details, call <strong>duration</strong>, the call <strong>timestamp</strong>, the associated <strong>profile</strong> id and <strong>interest</strong> id.
+    The callhistory also has three attributes which contain the paging formation. The <strong>total</strong> records found, the <strong>start</strong> call record and the <strong>count</strong>
+
+    </section3>     
+    
+    <p>A sample protocol flow for this use case is shown below.</p> 
+    <example caption='User agent application fetches the first 50 missed call records for a specific day'><![CDATA[ 
+<iq from='user.agent@shakespeare.lit/globe'
+    id='get-history-1'
+    to='openlink.shakespeare.lit'
+    type='set'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           action='execute'
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-call-history'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='input'>
+      <in>
+        <jid>alan.trader@shakespeare.lit</jid>
+	<caller/>
+	<called/>
+	<type>missed</type>
+	<fromdate>01/01/2011</fromdate>
+	<uptodate>01/02/2011</uptodate>
+	<start>0</start>
+	<count>50</count>        
+       </in>
+    </iodata>
+  </command>          
+</iq> 
+    ]]></example> 
+    <p>Unless an error occurs (see the <link url='#errors'>Error Handling</link> section below), the TSP completes the request.
+    The specified call records are returned as output IO Data.</p>
+    <example caption='TSP responds to Get Call History command request'><![CDATA[ 
+<iq from='openlink.shakespeare.lit'
+     id='get-history-1'
+    to='user.agent@shakespeare.lit/globe'
+    type='result'
+    xml:lang='en'> 
+  <command xmlns='http://jabber.org/protocol/commands' 
+           node='http://xmpp.org/protocol/openlink:01:00:00#get-call-history'
+           status='completed'> 
+    <iodata xmlns='urn:xmpp:tmp:io-data' type='output'>
+      <out>
+	<callhistory xmlns="http://xmpp.org/protocol/openlink:01:00:00/callhistory" total="374" start="0" count="50">
+	    <call>
+		<id>1294258606353D6729177767291</id>
+		<profile>77767291</profile>
+		<interest>D6729177767291</interest>
+		<state>ConnectionCleared</state>
+		<direction>Outgoing</direction>
+		<caller>67291</caller>
+		<callername>Kim Medley 67291</callername>
+		<called>9123</called>
+		<calledname>John</calledname>
+		<duration>5678</duration>
+		<timestamp>2011-01-05 20:16:46.543</timestamp>
+	    </call>
+	    ......
+	    .......
+	    
+	</callhistory>
+      </out>
+    </iodata>
+  </command> 
+</iq> 
+    ]]></example> 
+  </section2>
+  
+</section1> 
+
+
+
+<section1 topic='Error Handling' anchor='errors'> 
+  <p>Several error conditions are possible when an entity sends a command request to the TSP, as defined in the following table. If one of
+  these error conditions occurs, the TSP MUST return an error stanza to the requesting entity.</p>
+  <table caption='Error Conditions'> 
+    <tr> 
+      <th>Condition</th> 
+      <th>Cause</th> 
+    </tr> 
+    <tr> 
+      <td>Conflict</td> 
+      <td>The command cannot be completed because of a data or system conflict (e.g., an interest is already active).</td> 
+    </tr> 
+    <tr> 
+      <td>Feature</td> 
+      <td>The specific command is not supported (even though the ad-hoc commands protocol is).</td> 
+    </tr> 
+    <tr> 
+      <td>Forbidden</td> 
+      <td>The requesting entity does not have sufficient privileges to perform the command.</td> 
+    </tr> 
+    <tr> 
+      <td>Not Allowed</td> 
+      <td>No entity is allowed to perform the command (e.g., retrieve the CEO's interests).</td> 
+    </tr> 
+    <tr> 
+      <td>Unavailable</td> 
+      <td>The ad-hoc commands protocol is not supported.</td> 
+    </tr> 
+  </table> 
+  <p>For the syntax of these errors, see XEP-0086. Naturally, other errors may be returned as well.</p> 
+</section1> 
+
+<section1 topic='Deployment Notes' anchor='deployment'> 
+
+  <section2 topic='Telephony service discovery and configuration' anchor='telephony-service-discovery-deployment'> 
+  <p>It is possible that a single Openlink TSP will support multiple and different telephony services. This may may be needed when mutiple telephone vendors are used
+  within a single enterprise. In such senarios, it is recommended that the underlying telephone service components (TSC)s be implemented as XMPP components as well so that they
+  can be discovered by the Openlink TSP using normal XMPP Service Discovery.
+  A telephone service should advertise itself as a feature with the following Openlink TSC namespace <br/><strong>http://xmpp.org/protocol/openlink:01:00:00#tsc</strong></p>
+
+  <example caption='Telephone service component (TSC) responds to service discovery'><![CDATA[ 
+  <iq from='cisco_openlink.shakespeare.lit'
+      id='service-discovery-1'
+      to='openlink.shakespeare.lit'
+      type='result'>
+      <query xmlns="http://jabber.org/protocol/disco#info">
+	<identity category="component" type="generic" name="cisco"/>
+	<feature var="http://xmpp.org/protocol/openlink:01:00:00#tsc"/>
+      </query>
+  </iq> 
+      ]]></example> 
+      
+  <p>In order to associate Openlink TSCs with end users, it is recomended that <cite>XEP-0049: XMPP Private Storage</cite> be used. Each user will have &lt;openlink&gt; element
+  with the Openlink TSC namespace containing a list of TSCs that support the user. Each Openlink TSC will update the list as required and the Openlink TSP will read it on demand. 
+  </p>
+
+  <example caption='Openlink TSP queries for a list of Openlink TSCs that support an end user'><![CDATA[ 
+  <iq id='service-discovery-1'
+      from='enduser@openlink.shakespeare.lit'
+      to='shakespeare.lit'      
+      type='get'>
+      <query xmlns="jabber:iq:private">
+    	<openlink xmlns=http://xmpp.org/protocol/openlink:01:00:00#tsc />
+      </query>
+  </iq> 
+      ]]></example> 
+      
+   <p>Rsponse back for the XMPP server</p>
+   
+  <example caption='Openlink TSP recieves response for a list of Openlink TSCs that support an end user'><![CDATA[ 
+  <iq id='service-discovery-1'
+      from='shakespeare.lit'
+      to='enduser@openlink.shakespeare.lit'      
+      type='result'>
+      <query xmlns="http://jabber.org/protocol/disco#info">
+          <openlink xmlns="http://xmpp.org/protocol/openlink:01:00:00#tsc">
+            <tsc>its1.btc.local</tsc>
+            <tsc>cisco1.btc.local</tsc>
+         </openlink>
+      </query>
+  </iq> 
+      ]]></example>    
+   
+      
+  <p>It may also be required to support both a real Openlink TSP and a simulator for testing and developent on the same XMPP server. In such a case the 
+  Openlink Telephony Simulator (TSS) should advertise itself as a feature with the following Openlink TSC namespace <br/><strong>http://xmpp.org/protocol/openlink:01:00:00#tss</strong> </p>
+  
+  <example caption='Telephone service simulator (TSS) responds to service discovery'><![CDATA[ 
+  <iq from='cisco-sim_openlink.shakespeare.lit'
+      id='service-discovery-1'
+      to='openlink.shakespeare.lit'
+      type='result'>
+      <query xmlns="http://jabber.org/protocol/disco#info">
+	<identity category="component" type="generic" name="cisco"/>
+	<feature var="http://xmpp.org/protocol/openlink:01:00:00#tss"/>
+      </query>
+  </iq> 
+      ]]></example> 
+
+  </section2>   
+
+  <section2 topic='Client deployment' anchor='client-deployment'> 
+    <p>It is the responsiblity of the user agent client to filter event messages. If server-side filtering is required in the TSP, then pub-sub content filtering should be considered and implemented.
+    </p>
+  <p>IO Data enables the automation or auto-generation of a language wrapper for an Application Programming Interface (API) with an Openlink TSP. Below is an example to show how.
+  </p><example caption='Application Programming Interface (API) Example'><![CDATA[ 
+	// javascript syntax
+
+	service = client.getService("openlink.server.com");
+
+	function = service.getFunction("http://xmpp.org/protocol/openlink:01:00:00#make-call");
+
+	// Check if this Ad-Hoc Command supports the IO Data XEP?
+	
+	if (function instanceof IoDataFunction) {
+
+	   // Discover the input, output and Event XML Schemata - required only once!
+	   schemata = function.getIoSchemata();
+
+	   // Dynamically marshal an API for the input, output and events - required only once!
+	   inputOutputFactory = new IoFactory( schemata );
+
+	   // Create and set the input
+	   input1 = inputOutputFactory.createInputObject();
+	   input1.setJID("alan.trader@shakespeare.lit");
+
+	   input2 = inputOutputFactory.createInputObject();
+	   input2.setInterest("alan.trader_primary_ddi");
+	   
+	   input3 = inputOutputFactory.createInputObject();
+	   input3.setDestination("+447803888792");
+	   
+	   // Invoke the function
+	   result1 = function.invoke(input1, input2, input3);
+  
+    ]]></example> 
+
+  </section2>   
+  <section2 topic='Publish-Subscribe configuration' anchor='pubsub-deployment'> 
+  <p>It is the responsiblility of the TSP to create pub-sub nodes for user interests and publish items to them. The TSP can use
+  additional features like watch lists or other telephony confguration parameters to apply filters to the list of interests. This is
+  most relevant to a trading system where hundreds of lines could be accessible to a single trader. 
+  </p>
+  The following pub-sub configuration parameters are required.
+  <ul>
+  	<li><strong>send_last_published_item</strong> should be set in order for user agents to recieve the last call events when they log in.</li>
+  	<li><strong>subscription_depth</strong> should be 1 for only last event</li>
+  	<li><strong>subscription_type</strong> should be items</li> 
+  </ul>
+  </section2>   
+
+ 
+  <section2 topic='Voice Bridging' anchor='voice-bridge-implementation'> 
+  Voice Bridge implementations are required to mange their internal resources outside of the specification. Conferences and conference participants SHOULD be created and destroyed on demand as needed. 
+  In general, conferences should be created when the first participant enters and destroyed when the last participant exits
+  and perticipants should be created at the first user configuraton and destroyed when the associated call terminates. Implementators can decide to cache their internal objects.
+  </section2>  
+  
+</section1> 
+<section1 topic='Security Considerations' anchor='security'> 
+  <p>The ability to perform the TSP request specified herein MUST NOT be granted to user agent applications who lack service-level administrative
+  privileges.</p>
+</section1> 
+<section1 topic='IANA Considerations' anchor='iana'> 
+  <p>This document requires no interaction with IANA.</p> 
+</section1> 
+<section1 topic='XMPP Registrar Considerations' anchor='registrar'> 
+  <p>The Registrar shall include the following information in its registries.</p> 
+  <section2 topic='Protocol Namespaces' anchor='registrar-protocol'> 
+    <p>The XMPP Registrar includes "http://xmpp.org/protocol/openlink:01:00:00" in its registry of protocol namespaces.</p> 
+  </section2> 
+</section1> 
+</xep> 
