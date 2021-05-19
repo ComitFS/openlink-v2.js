@@ -18,13 +18,13 @@ export default class Openlink
 			
 			if (event.data.action == "accept")
 			{
-				this.requestAction("AnswerCall", event.data.payload);				
+				setTimeout(function() {this.requestAction("AnswerCall", event.data.payload)});				
 			}
 			else
 				
 			if (event.data.action == "reject")
 			{
-				this.requestAction("ClearConnection", event.data.payload);				
+				setTimeout(function() {this.requestAction("ClearConnection", event.data.payload)});				
 			}			
 				
 		});		
