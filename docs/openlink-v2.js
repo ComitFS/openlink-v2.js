@@ -76,13 +76,15 @@ export default class Openlink
 			
 			if (event.data.action == "accept")
 			{
-				this.requestAction("AnswerCall", event.data.payload);				
+				//this.requestAction("AnswerCall", event.data.payload);	
+				this.calls[event.data.payload.id].accept();
 			}
 			else
 				
 			if (event.data.action == "reject")
 			{			
-				this.requestAction("ClearConnection", event.data.payload);				
+				//this.requestAction("ClearConnection", event.data.payload);	
+				this.calls[event.data.payload.id].reject();
 			}			
 				
 		});		
