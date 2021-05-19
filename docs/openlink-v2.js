@@ -18,15 +18,13 @@ export default class Openlink
 			
 			if (event.data.action == "accept")
 			{
-				const that = this;
-				setTimeout(function() {that.requestAction("AnswerCall", event.data.payload)});				
+				this.requestAction("AnswerCall", event.data.payload);				
 			}
 			else
 				
 			if (event.data.action == "reject")
-			{
-				const that = this;				
-				setTimeout(function() {that.requestAction("ClearConnection", event.data.payload)});				
+			{			
+				this.requestAction("ClearConnection", event.data.payload);				
 			}			
 				
 		});		
@@ -406,7 +404,7 @@ export default class Openlink
             return;
         }
 
-        const registration = await navigator.serviceWorker.register('./webpush-sw.js', {scope: './'});			
+        const registration = await navigator.serviceWorker.register('./openlink-push-sw.js', {scope: './'});			
         console.debug("initialiseState", registration);
 		
 		const serviceWorkerRegistration = await navigator.serviceWorker.ready;
