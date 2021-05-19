@@ -7,9 +7,27 @@ export default class Openlink
 		this.url = null;
 		this.destination = null;
 		this.options = {};	
-		this.config = {}
-		this.calls = {}		
-		this.missed = {}			
+		this.config = {};
+		this.calls = {};		
+		this.missed = {};
+        this.actionChannel = new BroadcastChannel('openlink-webpush-action');
+		
+		this.actionChannel.addEventListener('message', event =>
+		{
+			console.debug("openlink-webpush-action", event.data);
+			
+			if (event.data.action == "accept")
+			{
+				this.requestAction("AnswerCall", event.data.payload);				
+			}
+			else
+				
+			if (event.data.action == "reject")
+			{
+				this.requestAction("ClearConnection", event.data.payload);				
+			}			
+				
+		});		
     }
 
 	executeAction(data) 
@@ -150,7 +168,16 @@ export default class Openlink
 			const json = await client.getToken({communicationUserId: config[profile]}, scopes);			
 			const request2 = {method: "POST", headers: {authorization}, body: json.token };			
 			const response2 = await fetch(url + "/acs_user_token", request2);
-				
+			
+			if (config.publicKey)
+			{		
+				config.subscription = await this.getSubscription(config.publicKey);
+				console.debug("getToken getSubscription", config.subscription);	
+				const webpush = "webpush.subscribe." + this.options.profile;
+				const request3 = {method: "POST", headers: {authorization}, body: JSON.stringify(config.subscription) };			
+				const response3 = await fetch(url + "/" + webpush, request3);				
+			}
+							
 			this.token = json;
 			this.config = config;	
 			this.source = new EventSource(this.url + "/acs/sse?id=" + this.options.id + "&token=" + json.token);
@@ -357,6 +384,57 @@ export default class Openlink
 		console.debug("webRegister step 4", response2);	
 		return response2;
 	}
+
+	async getSubscription(publicKey)
+	{	
+		console.debug("getSubscription", publicKey);
+		
+        if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
+            console.warn('Notifications aren\'t supported.');
+            return;
+        }
+
+        if (Notification.permission === 'denied') {
+            console.warn('The user has blocked notifications.');
+            return;
+        }
+
+        if (!('PushManager' in window)) {
+            console.warn('Push messaging isn\'t supported.');
+            return;
+        }
+
+        const registration = await navigator.serviceWorker.register('./webpush-sw.js', {scope: './'});			
+        console.debug("initialiseState", registration);
+		
+		const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+        console.debug("initialiseState ready", serviceWorkerRegistration);
+
+		let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+
+		if (!subscription && publicKey) 
+		{
+            subscription = await serviceWorkerRegistration.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: this.base64UrlToUint8Array(publicKey)});
+		}		
+		return subscription;
+    }
+
+    base64UrlToUint8Array(base64UrlData)
+    {
+        const padding = '='.repeat((4 - base64UrlData.length % 4) % 4);
+        const base64 = (base64UrlData + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = atob(base64);
+        const buffer = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            buffer[i] = rawData.charCodeAt(i);
+        }
+
+        return buffer;
+    }
 	
 	bufferDecode(e) 
 	{
