@@ -9,25 +9,7 @@ export default class Openlink
 		this.options = {};	
 		this.config = {};
 		this.calls = {};		
-		this.missed = {};
-        this.actionChannel = new BroadcastChannel('openlink-webpush-action');
-		
-		this.actionChannel.addEventListener('message', event =>
-		{
-			console.debug("openlink-webpush-action", event.data);
-			
-			if (event.data.action == "accept")
-			{
-				this.requestAction("AnswerCall", event.data.payload);				
-			}
-			else
-				
-			if (event.data.action == "reject")
-			{			
-				this.requestAction("ClearConnection", event.data.payload);				
-			}			
-				
-		});		
+		this.missed = {};	
     }
 
 	executeAction(data) 
@@ -86,6 +68,24 @@ export default class Openlink
 		this.url = options?.url || (location.protocol + "//" + location.host);
 			
 		console.debug("connect", options);
+        this.actionChannel = new BroadcastChannel('openlink-webpush-action');	
+		
+		this.actionChannel.addEventListener('message', event =>
+		{
+			console.debug("openlink-webpush-action", event.data);
+			
+			if (event.data.action == "accept")
+			{
+				this.requestAction("AnswerCall", event.data.payload);				
+			}
+			else
+				
+			if (event.data.action == "reject")
+			{			
+				this.requestAction("ClearConnection", event.data.payload);				
+			}			
+				
+		});		
 			
 		if (this.options.id && this.options.password)
 		{
