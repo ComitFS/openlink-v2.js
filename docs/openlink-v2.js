@@ -76,14 +76,12 @@ export default class Openlink
 			
 			if (event.data.action == "accept")
 			{
-				//this.requestAction("AnswerCall", event.data.payload);	
 				this.calls[event.data.payload.id].accept();
 			}
 			else
 				
 			if (event.data.action == "reject")
-			{			
-				//this.requestAction("ClearConnection", event.data.payload);	
+			{				
 				this.calls[event.data.payload.id].reject();
 			}			
 				
@@ -172,12 +170,16 @@ export default class Openlink
 			const response2 = await fetch(url + "/acs_user_token", request2);
 			
 			if (config.publicKey)
-			{		
-				config.subscription = await this.getSubscription(config.publicKey);
-				console.debug("getToken getSubscription", config.subscription);	
-				const webpush = "webpush.subscribe." + this.options.profile;
-				const request3 = {method: "POST", headers: {authorization}, body: JSON.stringify(config.subscription) };			
-				const response3 = await fetch(url + "/" + webpush, request3);				
+			{	
+				try {
+					config.subscription = await this.getSubscription(config.publicKey);
+					console.debug("getToken getSubscription", config.subscription);	
+					const webpush = "webpush.subscribe." + this.options.profile;
+					const request3 = {method: "POST", headers: {authorization}, body: JSON.stringify(config.subscription) };			
+					const response3 = await fetch(url + "/" + webpush, request3);	
+				} catch (e) {
+					console.error("getToken - unable to create webpush subcription", e);	
+				}					
 			}
 							
 			this.token = json;
@@ -186,6 +188,14 @@ export default class Openlink
 
 			const tokenCredential = new ACS.AzureCommunicationTokenCredential(json.token);
 			this.callClient = new ACS.CallClient();
+			this.deviceManager = await this.callClient.getDeviceManager();	
+
+			const localCameras = await this.deviceManager.getCameras();
+			const localMicrophones = await this.deviceManager.getMicrophones();
+			const localSpeakers = await this.deviceManager.getSpeakers();
+
+			console.debug("getToken devices", localCameras, localMicrophones, localSpeakers); 
+				
 			this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: config.name });
 
 			this.callAgent.on('incomingCall', async event => 
@@ -220,8 +230,21 @@ export default class Openlink
 
 					addedCall.on('stateChanged', () => {
 						console.debug("addedCall state", addedCall.state);	
-						this.postCallStatus(addedCall);						
-						if (addedCall.state == "Disconnected") addedCall.off('stateChanged', () => {});							
+						this.postCallStatus(addedCall);	
+						
+						if (addedCall.state == "Connected")
+						{
+							this.startStreamer(addedCall.id);
+						}
+						else
+							
+						if (addedCall.state == "Disconnected")
+						{
+							if (this.streamer) this.streamer.stop();
+							this.streamer = null;
+							
+							addedCall.off('stateChanged', () => {});							
+						}
 					});						
 				});				
 			})
@@ -290,7 +313,7 @@ export default class Openlink
 	
 	async postCallStatus(call)
 	{
-		console.debug("postCallStatus", call.id, call.direction, call.state);
+		console.debug("postCallStatus", call.id, call.state);
 		
 		const payload = {
 			id: call.id, 
@@ -420,6 +443,78 @@ export default class Openlink
 		}		
 		return subscription;
     }
+	
+    async startStreamer(callId) 
+	{	
+		console.debug("startStreamer", callId);
+		
+		if (window.ACS.streams)
+		{
+			const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });			
+			console.debug("startStreamer", window.ACS.streams, localStream);
+
+            const tracks = [
+                ...localStream.getVideoTracks(),
+                ...this.mergeAudioStreams(localStream, window.ACS.streams)
+            ];
+
+            const liveStream = new MediaStream(tracks);	
+			console.debug("startStreamer mixed audio", liveStream);
+			
+			let websocket = this.connectLiveStream(callId);
+			this.streamer = new MediaRecorder(liveStream, { mimeType: 'audio/webm;codecs=opus' });
+
+			this.streamer.ondataavailable = function (e) {
+				websocket.send(e.data);
+			}
+
+			this.streamer.onstop = function (e) {
+				websocket.close();
+				websocket = null;
+			}
+
+			this.streamer.start(1000);
+		}
+    }
+	
+    connectLiveStream(callId) 
+	{
+		const url = "wss://" + this.url.split("/")[2] + "/acs-ws/";
+        const metadata = { user: this.options.id, id: callId};
+        const ws = new WebSocket(url);
+
+        ws.onopen = (event) => {
+            console.debug(`Connection opened: ${JSON.stringify(event)}`);
+            ws.send(JSON.stringify(metadata));
+        };
+
+        ws.onclose = (event) => {
+            console.debug(`Connection closed: ${JSON.stringify(event)}`);
+        };
+
+        ws.onerror = (event) => {
+            console.debug(`An error occurred with websockets: ${JSON.stringify(event)}`);
+        };
+        return ws;
+    }	
+
+    mergeAudioStreams(localStream, remoteStreams) {
+        const context = new AudioContext();
+        const destination = context.createMediaStreamDestination();
+		const source1 = context.createMediaStreamSource(localStream);
+		const localGain = context.createGain();
+		localGain.gain.value = 0.5;
+		source1.connect(localGain).connect(destination);
+
+        remoteStreams.forEach(remoteStream => {
+            const source2 = context.createMediaStreamSource(remoteStream.clone());
+            const remoteGain = context.createGain();
+            remoteGain.gain.value = 0.5;
+            source2.connect(remoteGain).connect(destination);
+        })
+
+        return destination.stream.getAudioTracks();
+    }	
 
     base64UrlToUint8Array(base64UrlData)
     {
