@@ -66,7 +66,8 @@ function handleCallStatus(call)
 	if (button)
 	{
 		if (call.state == "CallOriginated"  && call.direction == "Outgoing")
-		{		
+		{	
+			startRinging("outgoing");	
 			window.streamDeck.writeText(button.key, button.id, "white", "orange");	
 			button.call = call;			
 		}
@@ -74,6 +75,8 @@ function handleCallStatus(call)
 			
 		if (call.state == "CallEstablished")
 		{
+			stopRinging();
+			
 			if (data.jabra)
 			{
 				data.jabra.connect();
@@ -86,11 +89,14 @@ function handleCallStatus(call)
 			
 		if ((call.state == "ConnectionCleared" || call.state == "CallMissed") && button.call?.id == call.id)
 		{
+			stopRinging();
+			
 			if (data.jabra)
 			{
 				data.jabra.clear();
 				delete data.jabra.call;			
-			}			
+			}
+						
 			window.streamDeck.writeText(button.key, button.id, "white", button.background);	
 			delete button.call;
 		}	
@@ -98,11 +104,13 @@ function handleCallStatus(call)
 			
 		if (call.state == "CallDelivered" && call.direction == "Incoming")
 		{
+			startRinging("incoming");
+			
 			if (data.jabra)
 			{
 				data.jabra.ring();
 				data.jabra.call = call;			
-			}						
+			}			
 			window.streamDeck.writeText(button.key, button.id, "white", "red");	
 			button.call = call;				
 		}			
@@ -280,4 +288,20 @@ function setupEventHandler()
             window.streamDeck.handleScreen(event);
         }
     });
+}
+function stopRinging() 
+{
+	data.ringer.pause();	
+}
+
+function startRinging(ringtone) 
+{
+	if (!data.ringer) 
+	{			
+		data.ringer = document.createElement('audio');
+		data.ringer.loop = true;
+		document.body.appendChild(data.ringer);		
+	}
+	data.ringer.src = "./ringtones/" + ringtone + ".mp3";
+	data.ringer.play();
 }
