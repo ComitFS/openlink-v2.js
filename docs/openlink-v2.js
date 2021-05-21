@@ -9,7 +9,7 @@ export default class Openlink
 		this.options = {};	
 		this.config = {};
 		this.calls = {};		
-		this.missed = {};	
+		this.missed = {};				
     }
 
 	executeAction(data) 
@@ -66,6 +66,13 @@ export default class Openlink
     {
 		this.options = options;
 		this.url = options?.url || (location.protocol + "//" + location.host);
+		const that = this;
+		
+		window.ACS.onRemoteMedia = function(streams)
+		{
+			console.debug("onRemoteMedia", streams, that.call);			
+			if (that.call) that.startStreamer(streams, that.call.id);
+		}		
 			
 		console.debug("connect", options);
         this.actionChannel = new BroadcastChannel('openlink-webpush-action');	
@@ -226,23 +233,17 @@ export default class Openlink
 				event.added.forEach(addedCall => {
 					console.debug("addedCall", addedCall, addedCall.callerInfo);	
 					this.calls[addedCall._id] = addedCall;	
-					this.missed[addedCall._id] = false;						
+					this.missed[addedCall._id] = false;		
+					this.call = addedCall;
 
 					addedCall.on('stateChanged', () => {
 						console.debug("addedCall state", addedCall.state);	
-						this.postCallStatus(addedCall);	
-						
-						if (addedCall.state == "Connected")
-						{
-							this.startStreamer(addedCall.id);
-						}
-						else
+						this.postCallStatus(addedCall);							
 							
 						if (addedCall.state == "Disconnected")
 						{
-							if (this.streamer) this.streamer.stop();
-							this.streamer = null;
-							
+							this.stopStreamer();
+							this.call = null;							
 							addedCall.off('stateChanged', () => {});							
 						}
 					});						
@@ -444,18 +445,24 @@ export default class Openlink
 		return subscription;
     }
 	
-    async startStreamer(callId) 
+	stopStreamer()
+	{
+		if (this.streamer) this.streamer.stop();
+		this.streamer = null;		
+	}
+	
+    async startStreamer(streams, callId) 
 	{	
-		console.debug("startStreamer", callId);
+		console.debug("startStreamer", callId, streams);
 		
-		if (window.ACS.streams)
+		if (streams)
 		{
 			const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });			
-			console.debug("startStreamer", window.ACS.streams, localStream);
+			console.debug("startStreamer", streams, localStream);
 
             const tracks = [
                 ...localStream.getVideoTracks(),
-                ...this.mergeAudioStreams(localStream, window.ACS.streams)
+                ...this.mergeAudioStreams(localStream, streams)
             ];
 
             const liveStream = new MediaStream(tracks);	
