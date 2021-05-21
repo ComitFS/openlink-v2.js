@@ -302,6 +302,6 @@ function startRinging(ringtone)
 		data.ringer.loop = true;
 		document.body.appendChild(data.ringer);		
 	}
-	data.ringer.src = "./ringtones/" + ringtone + ".mp3";
+	data.ringer.src = "./sounds/" + ringtone + ".mp3";
 	data.ringer.play();
 }
