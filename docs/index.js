@@ -291,11 +291,14 @@ function setupEventHandler()
 }
 function stopRinging() 
 {
-	data.ringer.pause();	
+    console.debug("stopRinging");	
+	data.ringer?.pause();	
 }
 
 function startRinging(ringtone) 
 {
+    console.debug("startRinging", ringtone);	
+	
 	if (!data.ringer) 
 	{			
 		data.ringer = document.createElement('audio');
