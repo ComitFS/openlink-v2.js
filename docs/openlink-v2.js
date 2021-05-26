@@ -22,6 +22,12 @@ export default class Openlink
 			this.requestMakeCall(request);
 		}
 		else
+			
+		if (request.action == "Intercom2Way")
+		{		
+			this.intercom2Way(request);
+		}
+		else		
 
 		if (request.action == "ClearConnection" || request.action == "ClearCall")
 		{
@@ -41,7 +47,7 @@ export default class Openlink
 		}
 		
 	}
-	
+
 	async requestMakeCall(request) 
 	{  
 		console.debug("requestMakeCall start", request.dialDigits, request.ddi);
@@ -60,6 +66,13 @@ export default class Openlink
 			call = await this.callAgent.startCall([{ communicationUserId: request.ddi }], {});
 		}	
 	
+	}
+	
+	async intercom2Way(request) 
+	{  
+		console.debug("intercom2Way start", request.target);	
+		this.interest = request.target;
+		const call = await this.callAgent.startCall([{ communicationUserId: request.target }], {});
 	}	
 
     async connect(options)
@@ -272,6 +285,16 @@ export default class Openlink
 		return response.json();	
 	}	
 
+	async makeIntercomCall(destination)
+	{
+		console.debug("makeIntercomCall", destination);	
+
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makeintercom/" + this.options.id + "/" + destination;
+		const response = await fetch(url, {method: "POST", headers: {authorization}});
+		return response.json();		
+	}
+	
 	async makeCallDirectLine(destination)
 	{
 		console.debug("makeCallDirectLine", destination);	

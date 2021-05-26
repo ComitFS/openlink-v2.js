@@ -276,7 +276,8 @@ function setupEventHandler()
 					else {	
 						if (data.buttons[i].type == "SpeedDial") openlink.makeDefaultCall(data.buttons[i].label);							
 						if (data.buttons[i].type == "L") 		 openlink.makeCallDirectLine(data.buttons[i].id);
-						if (data.buttons[i].type == "D") 		 openlink.makeCall(data.buttons[i].id, prompt("Destination"));																		
+						if (data.buttons[i].type == "D") 		 openlink.makeCall(data.buttons[i].id, prompt("Destination"));	
+						if (data.buttons[i].type == "Intercom")  openlink.makeIntercomCall(data.buttons[i].id);	
 					}
 				}					
 			}
