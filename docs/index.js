@@ -278,6 +278,7 @@ function setupEventHandler()
 						if (data.buttons[i].type == "L") 		 openlink.makeCallDirectLine(data.buttons[i].id);
 						if (data.buttons[i].type == "D") 		 openlink.makeCall(data.buttons[i].id, prompt("Destination"));	
 						if (data.buttons[i].type == "Intercom")  openlink.makeIntercomCall(data.buttons[i].id);	
+						if (data.buttons[i].type == "GroupIntercom")  openlink.makeIntercomGroupCall(data.buttons[i].label);							
 					}
 				}					
 			}

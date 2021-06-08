@@ -9,7 +9,8 @@ export default class Openlink
 		this.options = {};	
 		this.config = {};
 		this.calls = {};		
-		this.missed = {};				
+		this.missed = {};	
+		this.group_intercom = {};		
     }
 
 	executeAction(data) 
@@ -20,6 +21,12 @@ export default class Openlink
 		if (request.action == "MakeCall")
 		{		
 			this.requestMakeCall(request);
+		}
+		else
+			
+		if (request.action == "IntercomGroup")
+		{		
+			this.intercomGroup(request);
 		}
 		else
 			
@@ -67,12 +74,19 @@ export default class Openlink
 		}	
 	
 	}
-	
+
 	async intercom2Way(request) 
 	{  
 		console.debug("intercom2Way start", request.target);	
 		this.interest = request.target;
 		const call = await this.callAgent.startCall([{ communicationUserId: request.target }], {});
+	}	
+	
+	async intercomGroup(request) 
+	{  
+		console.debug("intercomGroup", request.guid);	
+		this.guid = request.guid;
+		const call = await this.callAgent.join({ groupId: request.guid });
 	}	
 
     async connect(options)
@@ -82,9 +96,8 @@ export default class Openlink
 		const that = this;
 		
 		window.ACS.onRemoteMedia = function(streams)
-		{
-			console.debug("onRemoteMedia", streams, that.call);			
-			if (that.call) that.startStreamer(streams, that.call.id);
+		{			
+			if (that.call && streams[0].id.startsWith("mainAudio")) that.startStreamer(streams, that.call.id);
 		}		
 			
 		console.debug("connect", options);
@@ -240,7 +253,8 @@ export default class Openlink
 				
 				event.removed.forEach(removedCall => {
 					console.debug("removedCall", removedCall.callEndReason, removedCall.callerInfo);
-					delete this.calls[removedCall._id];				
+					delete this.calls[removedCall._id];	
+					delete this.group_intercom[removedCall._id];			
 				})
 				
 				event.added.forEach(addedCall => {
@@ -251,14 +265,24 @@ export default class Openlink
 
 					addedCall.on('stateChanged', () => {
 						console.debug("addedCall state", addedCall.state);	
-						this.postCallStatus(addedCall);							
+
+						if (addedCall.state == "Connected")
+						{
+							this.group_intercom[addedCall.id] = this.guid;
+						}
+						else						
 							
 						if (addedCall.state == "Disconnected")
 						{
 							this.stopStreamer();
-							this.call = null;							
+							this.call = null;	
+							this.destination = null;	
+							this.interest = null;
+							this.guid = null;							
 							addedCall.off('stateChanged', () => {});							
 						}
+						this.postCallStatus(addedCall);	
+						
 					});						
 				});				
 			})
@@ -291,6 +315,16 @@ export default class Openlink
 
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/makeintercom/" + this.options.id + "/" + destination;
+		const response = await fetch(url, {method: "POST", headers: {authorization}});
+		return response.json();		
+	}
+	
+	async makeIntercomGroupCall(destination)
+	{
+		console.debug("makeIntercomGroupCall", destination);	
+
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makegroupintercom/" + this.options.id + "/" + destination;
 		const response = await fetch(url, {method: "POST", headers: {authorization}});
 		return response.json();		
 	}
@@ -337,7 +371,7 @@ export default class Openlink
 	
 	async postCallStatus(call)
 	{
-		console.debug("postCallStatus", call.id, call.state);
+		console.debug("postCallStatus", call.id, call.state, this.group_intercom[call.id]);
 		
 		const payload = {
 			id: call.id, 
@@ -346,7 +380,8 @@ export default class Openlink
 			direction: call.direction,
 			state: call.state,
 			missed: !!this.missed[call.id],
-			callerInfo: call.callerInfo
+			callerInfo: call.callerInfo,
+			guid:  this.group_intercom[call.id]
 		};		
 		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
 		const url = this.url + "/acs/api/openlink/callstatus";			
@@ -476,9 +511,9 @@ export default class Openlink
 	
     async startStreamer(streams, callId) 
 	{	
-		console.debug("startStreamer", callId, streams);
+		console.debug("startStreamer", callId, streams, this.streamer);
 		
-		if (streams)
+		if (!this.streamer && streams)
 		{
 			const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });			
 			console.debug("startStreamer", streams, localStream);
@@ -504,6 +539,9 @@ export default class Openlink
 			}
 
 			this.streamer.start(1000);
+		}
+		else {
+			console.error("streamer already active");
 		}
     }
 	
