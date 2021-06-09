@@ -268,7 +268,7 @@ export default class Openlink
 
 						if (addedCall.state == "Connected")
 						{
-							this.group_intercom[addedCall.id] = this.guid;
+							//this.group_intercom[addedCall.id] = this.guid;
 						}
 						else						
 							
