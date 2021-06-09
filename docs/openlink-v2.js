@@ -242,6 +242,7 @@ export default class Openlink
 					delete this.calls[call._callInternal._id];	
 				});				
 
+				this.group_intercom[call._callInternal._id] = null;
 				this.calls[call._callInternal._id] = call;	
 				this.postCallStatus(call._callInternal);
 				this.missed[call._callInternal._id] = true;	
@@ -268,7 +269,7 @@ export default class Openlink
 
 						if (addedCall.state == "Connected")
 						{
-							//this.group_intercom[addedCall.id] = this.guid;
+							this.group_intercom[addedCall.id] = this.guid;
 						}
 						else						
 							
