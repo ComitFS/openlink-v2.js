@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset='utf-8' />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="description" content="Converse.js: A chat client for your website" />
+
+    <meta name="viewport" content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' />
+    <!--<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, target-densityDpi=device-dpi" />-->
+
+	<script>
+		var URL = "https://pade.chat:5443";				
+	</script>
+    <link rel="stylesheet" type="text/css" media="screen" href="application.css">
+    <title>Openlink Demo</title>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="starter-template">
+        <h1>Openlink Demo</h1>
+        <p class="lead">The OpenlinkJS demo allows you to perform most Openlink commands.</p>
+        <p>To quickly get started edit the section <i>App.start</i> at the bottom of the page in a text editor.
+            Information on what each option does can be found in the README.md file which accompanies this demo page.</p>
+
+    </div>
+
+    <h2>Login/Logout</h2>
+    <div id="gc_login_window">
+        <ul class="formfield_wrap">
+            <li class="txtfield_wrap">
+                <input type="text" maxlength="50" value="" id="username" placeholder="Username">
+            </li>
+            <li class="txtfield_wrap">
+                <input type="password" maxlength="50" value="" id="password" placeholder="Password">
+            </li>
+        </ul>
+        <div class="gc_btn_holder"><input type="button" id="gc_signin" value="Sign in"></div>
+    </div>
+    <div id="gc_logout_window" style="display:none;">
+        <div class="gc_btn_holder"><input type="button" id="gc_signout" value="Sign out"></div>
+    </div>
+
+    <h2>Profiles</h2>
+    <div id="gc_profiles">
+        <div class="gc_list" id="gc_profile_list">
+            <ul>
+                <li>No profiles found</li>
+            </ul>
+        </div>
+        <div class="gc_btn_holder"><input type="button" id="gc_get_profiles" value="Get profiles"></div>
+    </div>
+
+    <h2>Features</h2>
+    <div id="gc_features">
+        <div class="gc_list" id="gc_feature_list">
+            <ul>
+                <li>No features found</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Interests</h2>
+    <div id="gc_interests">
+        <div class="gc_list" id="gc_interest_list">
+            <ul>
+                <li>No interests found</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Call History</h2>
+    <div id="gc_call_history">
+        <div class="gc_btn_holder">
+            <input type="button" id="gc_get_history" value="Get History">
+        </div>
+        <div class="gc_list" id="gc_history_list">
+            <ul>
+                <li>No history found</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Calls</h2>
+
+    <div id="gc_request_actions">
+        <h4>Request Action</h4>
+        <ul class="formfield_wrap">
+            <li class="txtfield_wrap">
+                <input type="text" maxlength="50" value="" id="request_action_callid" placeholder="Call ID">
+            </li>
+            <li class="txtfield_wrap">
+                <input type="text" maxlength="50" value="" id="request_action_actionid" placeholder="Action ID">
+            </li>
+            <li class="txtfield_wrap">
+                <input type="text" maxlength="50" value="" id="request_action_value1" placeholder="Value1">
+            </li>
+            <li class="txtfield_wrap">
+                <input type="text" maxlength="50" value="" id="request_action_value2" placeholder="Value2">
+            </li>
+        </ul>
+        <div class="gc_btn_holder"><input type="button" id="gc_request_action" value="Request Action"></div>
+    </div>
+
+    <div id="gc_calls">
+        <div class="gc_list" id="gc_call_list">
+            <ul>
+                <li>No calls found</li>
+            </ul>
+        </div>
+    </div>
+
+</div><!-- /.container -->
+
+<!-- Application -->
+<script src="application.js"></script>
+
+
+<script type="text/javascript">
+    App.start({
+        app: {
+            debug: true,
+            xmpp_domain: 'desktop-545pc5b',
+            xmpp_resource: 'openlink',
+            username: 'dele',
+            password: 'Welcome123',
+            system: 'acs',
+            autologon: false
+        }
+    });
+</script>
+<!-- /Application -->
+
+</body>
+</html>
+
