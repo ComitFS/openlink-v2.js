@@ -75,6 +75,23 @@ export default class Openlink
 	
 	}
 
+
+	async joinMeeting(button, streamDeck)
+	{	
+		console.debug("joinMeeting", button);	
+		button.call = await this.callAgent.join({ meetingLink: button.label});
+		if (streamDeck) streamDeck.writeText(button.key, button.id, "white", "green");			
+		console.debug("joinMeeting", button);		
+	}
+	
+	async leaveMeeting(button, streamDeck)
+	{	
+		console.debug("leaveMeeting", button);	
+		await button.call.hangUp();	
+		if (streamDeck) streamDeck.writeText(button.key, button.id, "white", button.background);	
+		delete button.call;			
+	}	
+	
 	async intercom2Way(request) 
 	{  
 		console.debug("intercom2Way start", request.target);	
@@ -242,7 +259,6 @@ export default class Openlink
 					delete this.calls[call._callInternal._id];	
 				});				
 
-				this.group_intercom[call._callInternal._id] = null;
 				this.calls[call._callInternal._id] = call;	
 				this.postCallStatus(call._callInternal);
 				this.missed[call._callInternal._id] = true;	
@@ -314,78 +330,60 @@ export default class Openlink
 	{
 		console.debug("makeIntercomCall", destination);	
 
-		if (destination)
-		{
-			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
-			const url = this.url + "/acs/api/openlink/makeintercom/" + this.options.id + "/" + destination;
-			const response = await fetch(url, {method: "POST", headers: {authorization}});
-			return response.json();	
-		}			
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makeintercom/" + this.options.id + "/" + destination;
+		const response = await fetch(url, {method: "POST", headers: {authorization}});
+		return response.json();		
 	}
 	
 	async makeIntercomGroupCall(destination)
 	{
 		console.debug("makeIntercomGroupCall", destination);	
 
-		if (destination)
-		{
-			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
-			const url = this.url + "/acs/api/openlink/makegroupintercom/" + this.options.id + "/" + destination;
-			const response = await fetch(url, {method: "POST", headers: {authorization}});
-			return response.json();		
-		}
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makegroupintercom/" + this.options.id + "/" + destination;
+		const response = await fetch(url, {method: "POST", headers: {authorization}});
+		return response.json();		
 	}
 	
 	async makeCallDirectLine(destination)
 	{
 		console.debug("makeCallDirectLine", destination);	
 
-		if (destination)
-		{
-			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
-			const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
-			const response = await fetch(url, {method: "POST", headers: {authorization}});
-			return response.json();	
-		}			
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
+		const response = await fetch(url, {method: "POST", headers: {authorization}});
+		return response.json();		
 	}
 
 	async makeDefaultCall(destination)
 	{
 		console.debug("makeCall", destination);	
 
-		if (destination)
-		{
-			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
-			const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
-			const response = await fetch(url, {method: "PUT", headers: {authorization}});
-			return response.json();	
-		}
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + destination;
+		const response = await fetch(url, {method: "PUT", headers: {authorization}});
+		return response.json();	
 	}
-	
+
 	async makeCall(interest, destination)
 	{
 		console.debug("makeCall", interest, destination);	
 
-		if (destination)
-		{
-			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
-			const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + interest + "/" + destination;
-			const response = await fetch(url, {method: "POST", headers: {authorization}});
-			return response.json();	
-		}
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/makecall/" + this.options.id + "/" + interest + "/" + destination;
+		const response = await fetch(url, {method: "POST", headers: {authorization}});
+		return response.json();	
 	}
 	
 	async requestAction(action, call, value)
 	{
 		console.debug("requestAction", action, call);	
 
-		if (action && call)
-		{
-			const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
-			const url = this.url + "/acs/api/openlink/requestaction/" + call.interest + "/" + action + "/" + call.id;
-			const response = await fetch(url, {method: "POST", headers: {authorization}, body: value});
-			return response.json();	
-		}
+		const authorization = "Basic " + btoa(this.options.id + ":" + this.options.password);
+		const url = this.url + "/acs/api/openlink/requestaction/" + call.interest + "/" + action + "/" + call.id;
+		const response = await fetch(url, {method: "POST", headers: {authorization}, body: value});
+		return response.json();	
 	}
 	
 	async postCallStatus(call)

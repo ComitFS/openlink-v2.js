@@ -27,7 +27,7 @@ window.addEventListener("load", function()
 async function setupOpenlink()
 {	
 	const profile = (browser_detect.browser + "_" + browser_detect.OS).toLowerCase();	
-	await openlink.connect({profile, url: URL});
+	await openlink.connect({profile, url: OPENLINK_URL});
 	
 	openlink.source.addEventListener('onConnect', event => {
 		console.debug("onConnect", event);		
@@ -201,7 +201,7 @@ function setupStreamDeck()
 		
 		if (features) features.forEach(feature =>
 		{
-			feature.background = "purple";			
+			feature.background = feature.type == "OnlineMeeting" ? "brown" : (feature.type == "SpeedDial" ? "Orange" : "purple");			
 			feature.key = i;
 			data.buttons[i] = feature;
 			window.streamDeck.writeText(i++, feature.id, "white", feature.background);			
@@ -271,15 +271,20 @@ function setupEventHandler()
 					if (call)
 					{
 						if (call.state == "CallDelivered") 		openlink.requestAction("AnswerCall", call);
-						if (call.state == "CallEstablished") 	openlink.requestAction("ClearConnection", call);							
+						if (call.state == "CallEstablished") 	openlink.requestAction("ClearConnection", call);						
+						
+						if (data.buttons[i].type == "OnlineMeeting") 	openlink.leaveMeeting(data.buttons[i], window.streamDeck);							
 					}						
 					else {	
-						if (data.buttons[i].type == "SpeedDial") openlink.makeDefaultCall(data.buttons[i].label);							
-						if (data.buttons[i].type == "L") 		 openlink.makeCallDirectLine(data.buttons[i].id);
-						if (data.buttons[i].type == "D") 		 openlink.makeCall(data.buttons[i].id, prompt("Destination"));	
-						if (data.buttons[i].type == "Intercom")  openlink.makeIntercomCall(data.buttons[i].id);	
-						if (data.buttons[i].type == "GroupIntercom")  openlink.makeIntercomGroupCall(data.buttons[i].label);							
+						if (data.buttons[i].type == "SpeedDial") 		openlink.makeDefaultCall(data.buttons[i].label);							
+						if (data.buttons[i].type == "L") 		 		openlink.makeCallDirectLine(data.buttons[i].id);
+						if (data.buttons[i].type == "D") 		 		openlink.makeCall(data.buttons[i].id, prompt("Destination"));	
+						if (data.buttons[i].type == "Intercom")  		openlink.makeIntercomCall(data.buttons[i].id);	
+						if (data.buttons[i].type == "GroupIntercom")  	openlink.makeIntercomGroupCall(data.buttons[i].label);
+						if (data.buttons[i].type == "OnlineMeeting")  	openlink.joinMeeting(data.buttons[i], window.streamDeck);
 					}
+				} else if (keys[i]?.down) {
+					console.debug("pressed button " + i)
 				}					
 			}
         }

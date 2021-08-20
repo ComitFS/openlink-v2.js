@@ -2,7 +2,6 @@ export default class JabraSpeak410
 {
     constructor() {
 		this.device = null;
-		this.call = null;
     }
 
     async attach(callback)
