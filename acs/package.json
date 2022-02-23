@@ -24,8 +24,8 @@
   "sideEffects": false,
   "dependencies": {
     "@azure/communication-identity": "^1.1.0-alpha.20220201.1",
-    "@azure/communication-calling": "^1.4.1-beta.1",
-    "@azure/communication-chat": "^1.1.2-alpha.20220201.1",
+    "@azure/communication-calling": "^1.4.3-beta.1",
+    "@azure/communication-chat": "^1.1.2-alpha.20220211.1",
     "@azure/communication-common": "^1.2.0-alpha.20220207.1",
     "@azure/msal-browser": "^2.22.0",
     "dotenv": "^8.2.0",
