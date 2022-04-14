@@ -26,6 +26,7 @@
     "@azure/communication-identity": "^1.1.0-alpha.20220321.1",
     "@azure/communication-calling": "^1.4.4",
     "@azure/communication-chat": "^1.2.0-alpha.20220321.1",
+    "@azure/communication-sms": "^1.1.0-alpha.20220407.1",
     "@azure/communication-common": "^2.0.0-alpha.20220321.1",
     "@azure/msal-browser": "^2.22.1",
     "dotenv": "^8.2.0",
