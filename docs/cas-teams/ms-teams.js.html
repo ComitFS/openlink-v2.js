@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: ms-teams.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: ms-teams.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @class 
+ * @classdesc This class creates an object than can login into CAS and use ACS to make calls
+ * @copyright ComitFS Limited
+ */
+export default class MsTeams {
+	/**
+	 * Represents an MsTeams instance.
+	 * @constructor
+	 */	
+    constructor() {
+		this.serviceWorker = null;		
+		this.calls = {};
+		this.chat = {messages: {}, senders: {}};		
+		this.account = null;
+		this.callAgent = null;	
+		this.smsClient = null;
+		this.host = location.host;
+		this.redirectUri = location.protocol + "//" + this.host + "/teams/msal";
+		this.extendedCallOutgoing = null;
+		this.intercoms = {};
+		this.remoteVideoContainer = null;
+		this.appContainer = null;
+		this.eventName = null;
+		this.token = null;			
+    }
+
+	/**
+	 * Use this method to login an Ms Teams user.
+	 * @param {string} account - The user account object. Only needed for ACS bring-your-own-identity (BYOI) and anonymous users.
+	 * @param {string} eventName - The name of the BroadcastChannel to be used to recieve events
+	 * @param {string} token - The access token provided by the CAS server	
+	 * @example 
+	 * 	teams.loginUser(null, "ms-teams-event-msal", "cCWcsOsxprO2BhnUnondjSqBLzPk1dCFf4Bb24JE");
+	 */
+	loginUser(account, eventName, token) {
+		this.token = token;	
+		this.eventName = eventName;	
+		
+		const url = location.protocol + "//" + this.host + "/teams/api/openlink/config/global";	
+		
+		fetch(url, {method: "GET"}).then(response => {return response.json()}).then(config => {
+
+			if (config.acs_endpoint &amp;&amp; config.client_id)
+			{
+				if (account) {	
+					this.account = account;
+					this.loggedIn(null, config);					
+				} else {
+					this.logIn(config);
+				}
+			}
+		}).catch(function (error) {
+			console.error("loginUser", error);
+			this.loggedIn(null, config, this.eventName);	// login anonymously with ACS identity
+		});	
+	}	
+
+	/**
+	 * Called by {@link loginUser} to login a user with config data provided by CAS.
+	 * @private
+	 * @param {object} config - The CAS provided configuration data. 
+	 */
+	logIn(config) {
+		const msalConfig = {
+			auth: {
+				clientId: config.client_id,
+				authority: "https://login.microsoftonline.com/common",
+				redirectUri: this.redirectUri
+			},
+			system: {
+				loggerOptions: {
+					loggerCallback: (level, message, containsPii) => {
+						if (containsPii) {	
+							return;	
+						}
+						switch (level) {	
+							case window.ACS.LogLevel.Error:	
+								console.error(message);	
+								return;	
+							case window.ACS.LogLevel.Info:	
+								console.info(message);	
+								return;	
+							case window.ACS.LogLevel.Verbose:	
+								console.debug(message);	
+								return;	
+							case window.ACS.LogLevel.Warning:	
+								console.warn(message);	
+								return;	
+						}
+					}
+				}
+			}
+		};
+		
+		const loginRequest = {
+			scopes: ["https://auth.msft.communication.azure.com/Teams.ManageCalls"]
+		};	
+		
+		const myMSALObj = new window.ACS.PublicClientApplication(msalConfig);	
+		
+		myMSALObj.handleRedirectPromise().then(response => 
+		{
+			const currentAccounts = myMSALObj.getAllAccounts();	
+			
+			if (currentAccounts.length === 0) {
+				// no accounts signed-in, attempt to sign a user in
+				myMSALObj.loginRedirect(loginRequest);
+				
+			} else if (currentAccounts.length > 1) {
+				this.account = currentAccounts[0];
+			} else if (currentAccounts.length === 1) {
+				this.account = currentAccounts[0];
+			}
+				
+			console.log("logIn", response, this.account);
+
+			if (response !== null &amp;&amp; this.account != null) {
+				this.loggedIn(response.accessToken, config);			
+			
+			} else {
+				const accessTokenRequest = {
+					account: this.account,
+					scopes: ["https://auth.msft.communication.azure.com/Teams.ManageCalls"],
+					redirectUri: this.redirectUri
+				};
+				
+				myMSALObj.acquireTokenSilent(accessTokenRequest).then(response => 
+				{
+					this.loggedIn(response.accessToken, config);
+					
+				}).catch(function (error) {
+					//Acquire token silent failure, and send an interactive request
+					console.warn("logIn", error);
+					
+					if (error instanceof window.ACS.InteractionRequiredAuthError) {
+						myMSALObj.acquireTokenRedirect(accessTokenRequest);
+					}
+				});					
+			}		
+		}).catch(function (error) {
+			console.error("logIn", error);
+		});	
+	}
+
+	/**
+	 * Called by {@link loginUser} and {@link logIn} to login a user with config data provided by CAS and an access token provided by MS Authentication Library (MSAL).
+	 * @private
+	 * @param {string} accessToken - access token provided by MSAL. Use NULL for anonymous or bring-your-own-identity (BYOI) ACS users.
+	 * @param {object} config - The CAS provided configuration data. 
+	 */
+	async loggedIn(accessToken, config) {
+		this.eventChannel = new BroadcastChannel(this.eventName);		
+		console.debug("loggedIn teams token", accessToken, config, this.account, this.eventName);	
+	
+		const client = new ACS.CommunicationIdentityClient(config.acs_endpoint);
+
+		if (accessToken == null)
+		{	
+			const webUrl = location.protocol + "//" + this.host + "/teams/api/openlink/config/properties";	
+			const authorization = this.token;
+			const response = await fetch(webUrl, {method: "GET", headers: {authorization}});
+			const property = await response.json();	
+
+			console.log("User properties", property);
+
+			if (!property.ms_teams_id) {				
+				const user = await client.createUser();
+				property.ms_teams_id = user.communicationUserId;								
+				const body = JSON.stringify([{name: "ms_teams_id", value: user.communicationUserId}]);
+				await fetch(webUrl, {method: "POST", headers: {authorization}, body});				
+			}
+					
+			const response2 = await client.getToken({communicationUserId: property.ms_teams_id}, ["chat", "voip"]);
+			this.account.phoneNumber = property.ms_phone_number ? "+" + property.ms_phone_number : null;
+			this.account.localAccountId = property.ms_teams_id;
+			if (property.name) this.account.name = property.name;		
+
+			console.debug("loggedIn ACS user token", response2.token, this.account);				
+			
+			this.createCallAgent(response2.token);
+			this.createChatClient(config, response2.token);			
+			this.setupEventSource();
+			this.setupUI(response.token);
+			
+		} else {			
+			client.getTokenForTeamsUser(accessToken).then(response =>
+			{
+				console.debug("loggedIn MS Teams user token", response.token);
+				
+				this.setupEventSource();				
+				this.createCallAgent(response.token);
+				this.setupUI(response.token);
+				
+			}).catch(function (error) {
+				console.error("loggedIn", error);
+			});	
+		}
+
+		this.smsClient = new ACS.SmsClient(config.acs_endpoint);			
+	}
+
+	/**
+	 * Called by {@link loggedIn} to create a CallAgent object for all subsequent ACS voice communication API calls.
+	 * @param {string} token - ACS access token provided by ACS Communication Identity Client.
+	 * @private	 
+	 */
+	async createCallAgent(token) {
+		const tokenCredential = new ACS.AzureCommunicationTokenCredential(token);		
+		const callClient = new ACS.CallClient();
+		const deviceManager = await callClient.getDeviceManager();	
+		const localCameras = await deviceManager.getCameras();
+		const localMicrophones = await deviceManager.getMicrophones();
+		const localSpeakers = await deviceManager.getSpeakers();
+
+		console.debug("createCallAgent devices", localCameras, localMicrophones, localSpeakers); 
+			
+		let displayName;
+		if (this.account.localAccountId.startsWith("8:acs")) displayName = this.account.name;			
+		this.callAgent = await callClient.createCallAgent(tokenCredential, { displayName});
+		
+		this.callAgent.on('incomingCall', async event => 
+		{
+			let call = event.incomingCall;
+			const teamsId = call.callerInfo.identifier.microsoftTeamsUserId;			
+			console.debug("incomingCall", call.callerInfo.displayName);
+
+			call.on('callEnded', endedCall => {
+				console.debug("endedCall", endedCall, call);
+				
+				if (endedCall.callEndReason.code != 0)
+				{
+					this.postCallStatus(call._callInternal, "Missed");	
+				}				
+				call.off('stateChanged', () => {});
+				delete this.calls[call._callInternal._id];				
+				call = null;			
+			});	
+
+			this.calls[call._callInternal._id] = call;
+			this.postCallStatus(call._callInternal);	
+
+			if (teamsId &amp;&amp; this.intercoms[teamsId]) {	// intercom or extended call
+				call.accept();
+			}
+			else
+			
+			if (this.intercoms[this.account.localAccountId]) {	// call extended incoming, auto-accept 
+				call.accept();			
+
+			} else {							
+				const message = {event: 'ms-teams.call.notification', id: call.id, displayName: call.callerInfo.displayName, phoneNumber: call.callerInfo.identifier.phoneNumber};
+				this.eventChannel.postMessage(message);
+			}
+		});
+
+		this.callAgent.on('callsUpdated', event => 
+		{
+			console.debug("callsUpdated", event); 
+			
+			event.removed.forEach(removedCall => {
+				console.debug("removedCall", removedCall.callEndReason, removedCall.callerInfo);		
+				delete this.calls[removedCall._id];			
+			})
+			
+			event.added.forEach(addedCall => {
+				console.debug("addedCall", addedCall, addedCall.callerInfo);
+				this.calls[addedCall._id] = addedCall;	
+
+				addedCall.remoteParticipants.forEach(remoteParticipant => {
+					this.subscribeToRemoteParticipant(remoteParticipant);
+				})				
+
+				addedCall.on('remoteParticipantsUpdated', e => {
+					e.added.forEach(remoteParticipant => { 
+						this.subscribeToRemoteParticipant(remoteParticipant);
+						this.postCallStatus(addedCall);						
+					});
+					
+					e.removed.forEach(remoteParticipant => {
+						this.postCallStatus(addedCall);
+					});
+				});
+			
+				addedCall.on('stateChanged', () => {
+					console.debug("addedCall state", addedCall.state, this.extendedCallOutgoing);	
+
+					if (addedCall.state == "Connected") {
+						
+						if (this.extendedCallOutgoing) {						
+							this.addThirdParty(addedCall.id, this.extendedCallOutgoing);								
+							this.extendedCallOutgoing = null;												
+						}	
+
+						if (this.intercoms[this.account.localAccountId]) {	// call extended, call extension 
+							const request = this.intercoms[this.account.localAccountId];
+							console.debug("addedCall extend call", request);
+							addedCall.mute();
+							this.addThirdParty(addedCall.id, request.destination);						
+							delete this.intercoms[this.account.localAccountId];											
+						}
+						
+						this.eventChannel.postMessage({event: 'ms-teams.call.connected', id: addedCall.id});							
+						
+						const callTransferFeature = addedCall.feature(ACS.Features.Transfer);				
+						
+						callTransferFeature.on('transferRequested', args => {
+							args.accept();
+						});					
+					}
+					else						
+						
+					if (addedCall.state == "Disconnected")
+					{		
+						this.eventChannel.postMessage({event: 'ms-teams.call.disconnected', id: addedCall.id});
+						addedCall.off('stateChanged', () => {});					
+					}
+					else						
+						
+					if (addedCall.state == "LocalHold")
+					{		
+						this.eventChannel.postMessage({event: 'ms-teams.call.held', id: addedCall.id});
+					}			
+					this.postCallStatus(addedCall);					
+				});						
+			});				
+		});	
+	}
+
+	/**
+	 * Called by {@link loggedIn} to create a browser Event Source object for recieving CAS events.
+	 * It also creates all the event handlers to process the events and broadcast them via the browser BroadcastChannel.
+	 * @private	 
+	 */
+	setupEventSource() {
+		this.source = new EventSource(location.protocol + "//" + this.host + "/teams/sse?uid=" + encodeURI(this.account?.localAccountId) + "&amp;token=" + encodeURI(this.token));
+		
+		this.source.addEventListener('onConnect', event => {
+			console.debug("onConnect", event);		
+		});
+
+		this.source.addEventListener('onRegister', async event => {
+			const json = JSON.parse(event.data);
+			console.debug("onRegister", json);	
+			this.eventChannel.postMessage({event: 'ms-teams.on-register', json});			
+		});
+
+		this.source.addEventListener('onRegistered', async event => {
+			console.debug("onRegistered", event.data);	
+			this.eventChannel.postMessage({event: 'ms-teams.authenticated'});
+		});
+
+		this.source.addEventListener('onSMS', async event => {
+			const json = JSON.parse(event.data);
+			console.debug("onSMS", json);
+			this.handleSMS(json);			
+		});
+		
+		this.source.addEventListener('onSMSNotify', async event => {
+			const sms = JSON.parse(event.data);
+			console.debug("onSMSNotify", sms);
+			this.eventChannel.postMessage({event: 'ms-teams.on-sms-notify', sms});	
+		});
+		
+		this.source.addEventListener('onIdentify', async event => {
+			const json = JSON.parse(event.data);
+			console.debug("onIdentify", json);	
+			this.eventChannel.postMessage({event: 'ms-teams.on-identify', json});			
+		});
+
+		this.source.addEventListener('onIdentified', async event => {
+			console.debug("onIdentified", event.data);	
+			this.eventChannel.postMessage({event: 'ms-teams.authenticated'});	
+		});	
+		
+		this.source.addEventListener('onAction', event => {
+			const request = JSON.parse(event.data);
+			console.debug("onAction", request);		
+			
+			if (request.action == "makeCall") {			
+				if (request.type == "L") this.makeCall(request.interest, request.features);	
+				if (request.type == "D") this.makeCall(request.destination, request.features);				
+			}
+			else
+
+			if (request.action == "autoAnswer") {		
+				this.intercoms[request.interest] = request;	
+			}			
+			else			
+				
+			if (request.action == "requestAction") {		
+				if (request.request_action == "AnswerCall") 		this.acceptCall(request.call_id);
+				if (request.request_action == "RejectCall") 		this.rejectCall(request.call_id);			
+				if (request.request_action == "ClearConnection") 	this.hangupCall(request.call_id);			
+				if (request.request_action == "HoldCall") 			this.holdCall(request.call_id);
+				if (request.request_action == "RetrieveCall") 		this.resumeCall(request.call_id);
+				if (request.request_action == "TransferCall") 		this.transferCall(request.call_id, request.destination);			
+				if (request.request_action == "AddThirdParty") 		this.addThirdParty(request.call_id, request.destination);						
+				if (request.request_action == "RemoveThirdParty") 	this.removeThirdParty(request.call_id, request.destination);						
+				if (request.request_action == "StartScreenShare") 	this.startScreenShare(request.call_id);	
+				if (request.request_action == "StopScreenShare") 	this.stopScreenShare(request.call_id);								
+			}		
+		});	
+		
+		this.source.addEventListener('onEvent', event => {
+			const data = JSON.parse(event.data);
+			console.debug("onEvent", data);		
+		});			
+	}
+
+	/**
+	 * Called by {@link loggedIn} to setup the embedded user interface widgets for notifications and screenshare.
+	 * @param {string} token - ACS access token provided by ACS Communication Identity Client.
+	 * @private	 
+	 */
+	setupUI(token) {
+        this.eventChannel.postMessage({event: 'ms-teams.token.recieved', token});
+		const that = this;
+		
+		function initialiseError(error) {
+			console.error("initialiseError", error);
+		}
+
+		function initialiseState(registration) {
+			if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
+				console.warn('Notifications aren\'t supported.');
+				return;
+			}
+
+			if (Notification.permission === 'denied') {
+				console.warn('The user has blocked notifications.');
+				return;
+			}
+
+			if (!('PushManager' in window)) {
+				console.warn('Push messaging isn\'t supported.');
+				return;
+			}
+
+			console.debug("setupUI - initialiseState", registration);
+
+			navigator.serviceWorker.ready.then(serviceWorkerRegistration =>
+			{
+				console.debug("setupUI - initialiseState ready", serviceWorkerRegistration);
+				that.serviceWorker = serviceWorkerRegistration.active;				
+			});
+		}	
+		
+		navigator.serviceWorker.register('../lib/ms-teams-sw.js', {scope: '/teams/lib/'}).then(initialiseState, initialiseError);
+
+		navigator.serviceWorker.addEventListener('message', event => 
+		{
+			if (event.data.action == "accept") this.acceptCall(event.data.id);
+			if (event.data.action == "reject") this.rejectCall(event.data.id);			
+		});
+		
+		this.remoteVideoContainer = document.getElementById('remotescreenshare');
+		if (this.remoteVideoContainer) this.remoteVideoContainer.hidden = true;
+		this.appContainer = document.getElementById('demo-container');		
+		if (this.appContainer) this.appContainer.hidden = false;		
+	}
+
+	/**
+	 * Called by {@link loggedIn} to create a ChatClient object for all subsequent ACS messaging communication API calls.
+	 * @param {object} config - The CAS provided configuration data. 	 
+	 * @param {string} token - ACS access token provided by ACS Communication Identity Client.
+	 * @private	 
+	 */
+	async createChatClient(config, token) {
+		const tokenCredential = new ACS.AzureCommunicationTokenCredential(token);		
+		this.chat.chatClient = new ACS.ChatClient("https://" + config.acs_endpoint.split("/")[2], tokenCredential);		
+		this.chat.chatClient.startRealtimeNotifications();
+		
+		this.chat.chatClient.on("chatMessageReceived", async (e) => {
+			console.debug("createChatClient chatMessageReceived!", e, this.chat.messages[e.id]);		
+			const sender = sessionStorage.getItem("ms_teams_byoi_chatid_" + e.threadId);
+			
+			if (sender) 
+			{
+				if (!this.chat.messages[e.id]) {
+					this.chat.messages[e.id] = e.senderDisplayName;
+					this.sendSms([sender], e.message.replace(/(&lt;([^>]+)>)/gi, ""));
+							
+				} else delete this.chat.messages[e.id];				
+			}			
+		});			
+	}
+
+	/** 
+	 * called by {@link setupEventSource) to handle incoming SMS messages from ACS
+	 * @private	 
+	 * @param {object} json - The JSON object delivering the SMS message 
+	 * @example	 
+	 * {
+	 * 		"cli": "+18882020902",
+	 *		"name": "JJ Gartland",
+	 *		"from": "+18334432533",
+	 *		"id": "Incoming_20220423145510d3fd90fe-2866-4cbe-8ec5-ed3fdf12e23f",
+	 * 		"to": [
+	 *			{"id": { "microsoftTeamsUserId": "83ec482c-3bc5-4116-acee-e081cc720630" }}
+	 *		],
+	 *		"body": "hello dele. How are you?",
+	 *		"email": "jjgarland@desktop-545pc5b",
+	 *		"username": "jjgartland",
+	 *		"timestamp": "2022-04-23T14:55:10.34Z"
+	 * 	}	 	 
+	 */		
+	async handleSMS(json) {
+		let threadId = sessionStorage.getItem("ms_teams_byoi_chatid_" + json.from);	
+		
+		if (!threadId) {
+			const createChatThreadRequest = {topic: json.name};			
+			const createChatThreadOptions = {participants: json.to};
+			const createChatThreadResult = await this.chat.chatClient.createChatThread(createChatThreadRequest,createChatThreadOptions);
+			threadId = createChatThreadResult.chatThread.id;	
+			
+			sessionStorage.setItem("ms_teams_byoi_chatid_" + json.from, threadId);
+			sessionStorage.setItem("ms_teams_byoi_chatid_" + threadId, json.from);	
+		}	
+
+		if (!this.chat.messages[json.id]) {		
+			const chatThreadClient = this.chat.chatClient.getChatThreadClient(threadId);		
+			const sendMessageRequest = {content: json.body};		
+			const sendMessageOptions = {senderDisplayName: json.name, type: 'text'};
+			const sendChatMessageResult = await chatThreadClient.sendMessage(sendMessageRequest, sendMessageOptions);
+			const messageId = sendChatMessageResult.id;	
+			this.chat.messages[messageId] = json.name;				
+			
+		} else delete this.chat.messages[json.id];		
+		
+	}
+	
+	/**
+	 * Use this method to send an SMS message to one or many destinations
+	 * @param {array} to - An array of fully normalized telephone mubers. For example, [+447825589457]	 
+	 * @param {string} from - The fully normalized telephone mubers approved to send the message. Use NULL to use the default telephone number. 	 
+	 * @param {string} message - The message text to be sent.
+	 * @example	 
+	 * if (event.data.event == "ms-teams.on-sms-notify") {
+	 * 	 if (event.data.sms) {
+	 *		const label = event.data.sms.name + "\n" + event.data.sms.body;
+	 * 	 	const reply = prompt(label);
+	 *
+	 *	 	if (reply &amp;&amp; reply != "") {
+	 *			teams.sendSms([event.data.sms.from], reply, event.data.sms.reply);
+	 *		}
+	 *	 }	 
+	 * }	 
+	 */
+	async sendSms(to, message, from) {	
+		console.debug("sendSms", to, from, message);	
+		const sendResults = await this.smsClient.send({from: from || this.account.phoneNumber, to, message}, {enableDeliveryReport: true, tag: "configuration"});
+
+		for (const sendResult of sendResults) {
+		  if (sendResult.successful) {
+			console.log("sendSms - Success: ", sendResult);
+		  } else {
+			console.error("sendSms - Something went wrong when trying to send this message: ", sendResult);
+		  }
+		}
+	}
+
+	/**
+	 * Use this method when handling a "ms-teams.call.notification" broadcast event before it is displayed as a notification popup.
+	 * This method can be used to prevent a notification popup from being displayed or can be used to add additional information before it is displayed.
+	 * @param {object} options - The options to be sent to the processing service-worker.
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.notification") {
+	 * 	 const opt = {id: event.data.id, contextMessage: event.data.displayName, message: "Incoming Call", iconUrl: "./client.png"};
+	 *
+	 * 	 if (event.data.phoneNumber == "+441634251467") opt.contextMessage = "JJ Garland";	
+	 *
+	 *	 teams.handleNotification(opt);
+	 * }
+	 */	 
+	handleNotification(options) {				
+		if (this.serviceWorker) this.serviceWorker.postMessage(options);		
+	}
+
+	/**
+	 * Called by {@link createChatClient} to convert ACS call events into Openlink and send to CAS
+	 * @param {object} call - The ACS Call object. 	 
+	 * @param {string} state - The call state expected by CAS.
+	 * @private	 
+	 */		
+	async postCallStatus(call, state)  {
+		console.debug("postCallStatus", call.id, call.state);
+		const participants = [];		
+
+		for (let index in call.remoteParticipants)
+		{
+			const participant = call.remoteParticipants[index];
+			participants.push({identifier: participant.identifier, state: participant.state, muted: participant.isMuted, speaking: participant.isSpeaking, displayName: participant.displayName});
+		}	
+		
+		const payload = {
+			id: call.id, 
+			account: this.account?.localAccountId,		
+			direction: call.direction,
+			state: state ? state : call.state,
+			callerInfo: call.callerInfo,
+			destination: call.__destination,
+			participants: participants			
+		};		
+		const url = location.protocol + "//" + this.host + "/teams/api/openlink/callstatus";			
+		const response = await fetch(url, {method: "POST", body: JSON.stringify(payload)});				
+	}
+
+	/**
+	 * Use this method to make a call to a given destination
+	 * @param {string} destination - The ACS recognised destination. It can be a fully normalized telephone number, an MS Teams user id or an ACS endpoint address. 	 
+	 * @param {object} features - Optional CAS features that can be used or applied to this call. 
+	 * @example	 
+	 *		teams.makeCall("+447825589457");
+	 *
+	 */	
+	async makeCall(destination, features) { 
+		console.debug("makeCall", destination, features);	
+
+		// this currently only works on ACS with Teams Identities, 
+		// Only teams acs endpoint can add another teams participant to call
+		// Instead, we intercom Teams participant and then exend call to extended phone number when call is answered
+		// Teams participant would have recieved an autoAnswer request from server.
+	
+		if (features?.extend) {
+			this.extendedCallOutgoing = features.extend;			
+		}	
+			
+		let call, threadId;
+
+		if (!this.account.localAccountId.startsWith("8:acs")) {
+			threadId = "19:" + this.account.localAccountId + "_" + this.account.localAccountId + "@unq.gbl.spaces";	
+		}
+		
+		if (destination.startsWith("+"))  {	
+			threadId = "00000000-0000-0000-0000-000000000000";	
+			//const alternateCallerId = {phoneNumber: this.account.phoneNumber};
+			const alternateCallerId = this.account.phoneNumber;			
+			call = await this.callAgent.startCall([{phoneNumber: destination.replaceAll(" ", "")}], {alternateCallerId, threadId});	  			
+		} 
+		else
+			
+		if (destination.startsWith("8:acs"))  {
+			
+			if (!this.account.localAccountId.startsWith("8:acs")) {			
+				threadId = "19:" + this.account.localAccountId + "_" + destination + "@unq.gbl.spaces";
+			}
+			call = await this.callAgent.startCall([{communicationUserId: destination }], {threadId});		
+		} 	
+		else {
+			
+			if (!this.account.localAccountId.startsWith("8:acs")) {			
+				threadId = "19:" + this.account.localAccountId + "_" + destination + "@unq.gbl.spaces";	
+			}
+			call = await this.callAgent.startCall([{ microsoftTeamsUserId: destination }],	{threadId});
+		}
+		call.__destination = destination;
+	}
+
+	/**
+	 * Use this method to accept a notified call via the "ms-teams.call.notification" broadcast event
+	 * @param {string} id - The call id provided by ACS
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.notification") {
+	 *
+	 * 	 if (event.data.phoneNumber == "+441634251467") teams.acceptCall(event.data.id);
+	 *
+	 * }	 
+	 */	
+	acceptCall(id) {
+		if (this.calls[id]) this.calls[id].accept({});
+	}
+
+	/**
+	 * Use this method to reject a notified call via the "ms-teams.call.notification" broadcast event
+	 * @param {string} id - The call id provided by ACS
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.notification") {
+	 *
+	 * 	 if (event.data.phoneNumber == "+441634251467") teams.rejectCall(event.data.id);
+	 *
+	 * }	 
+	 */	 
+	rejectCall(id) {
+		if (this.calls[id]) this.calls[id].reject({});
+	}
+
+	/**
+	 * Use this method to hold a connected call via the "ms-teams.call.connected" broadcast event
+	 * @param {string} id - The call id provided by ACS
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.connected") {
+	 *
+	 * 	 teams.holdCall(event.data.id);
+	 *
+	 * }	 
+	 */	
+	holdCall(id) {
+		if (this.calls[id]) this.calls[id].hold();
+	}
+
+	/**
+	 * Use this method to resume a held call via the "ms-teams.call.held" broadcast event
+	 * @param {string} id - The call id provided by ACS
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.held") {
+	 *
+	 * 	 teams.resumeCall(event.data.id);
+	 *
+	 * }	 
+	 */
+	resumeCall(id) {
+		if (this.calls[id]) this.calls[id].resume({});
+	}
+
+	/**
+	 * Use this method to terminate a connected call via the "ms-teams.call.connected" broadcast event
+	 * @param {string} id - The call id provided by ACS
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.connected") {
+	 *
+	 * 	 teams.hangupCall(event.data.id);
+	 *
+	 * }	 
+	 */
+	hangupCall(id) {
+		
+		if (id == "all") {
+			const existingCalls = Object.getOwnPropertyNames(this.calls);
+
+			for (let i in existingCalls)
+			{	
+				const call = this.calls[existingCalls[i]];
+				if (call) call.hangUp();
+			}
+		} else {	
+			if (this.calls[id]) this.calls[id].hangUp();
+		}	
+	}
+
+	/**
+	 * Use this method to transfer a connected call via the "ms-teams.call.connected" broadcast event to a new destination.
+	 * @param {string} id - The call id provided by ACS
+	 * @param {string} destination - The ACS recognised destination. It can be a fully normalized telephone number, an MS Teams user id or an ACS endpoint address. 	 	 
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.connected") {
+	 *
+	 * 	 teams.transferCall(event.data.id, "+447825589457");
+	 *
+	 * }	 
+	 */
+	transferCall(id, destination) {
+		if (this.calls[id])
+		{	
+			let threadId = null;
+			
+			if (!this.account.localAccountId.startsWith("8:acs")) {			
+				threadId = "19:" + this.account.localAccountId + "_" + this.account.localAccountId + "@unq.gbl.spaces";		
+			}
+			
+			const callTransferFeature = this.calls[id].feature(ACS.Features.Transfer);
+			console.debug("transferCall", id, destination, callTransferFeature);
+		
+			let transfer;
+			
+			if (destination.startsWith("+"))  {
+				transfer = callTransferFeature.transfer({targetParticipant: {phoneNumber: destination}, threadId});			
+			}
+			else {
+				
+				if (!this.account.localAccountId.startsWith("8:acs")) {					
+					threadId = "19:" + this.account.localAccountId + "_" + destination + "@unq.gbl.spaces";									
+				}
+				transfer = callTransferFeature.transfer({targetParticipant: {microsoftTeamsUserId: destination}, threadId});			
+			}
+			
+			transfer.on('stateChanged', () => {
+				console.debug("transfer state", transfer.state); // None | Transferring | Transferred | Failed
+
+				if (transfer.state == "Transferred")
+				{	
+					this.postCallStatus(this.calls[id], "Disconnected");	
+					this.eventChannel.postMessage({event: 'ms-teams.call.transferred', id});					
+				}
+			});			
+		}		
+	}
+
+	/**
+	 * Use this method to add a third party destination to a connected call via the "ms-teams.call.connected" broadcast event
+	 * This action will convert a one-to-one call (p2p) into a group call.
+	 * @param {string} id - The call id provided by ACS
+	 * @param {string} destination - The ACS recognised destination. It can be a fully normalized telephone number, an MS Teams user id or an ACS endpoint address. 	 	 
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.connected") {
+	 *
+	 * 	 teams.addThirdParty(event.data.id, "+447825589457");
+	 *
+	 * }	 
+	 */
+	addThirdParty(id, destination) {
+		if (this.calls[id])
+		{	
+			let threadId = null;
+			
+			if (!this.account.localAccountId.startsWith("8:acs")) {				
+				threadId = "19:" + this.account.localAccountId + "_" + this.account.localAccountId + "@unq.gbl.spaces";	
+			}
+
+			if (destination.startsWith("+"))  {
+				this.calls[id].addParticipant({phoneNumber: destination}, {alternateCallerId: this.account.ms_phone_number, threadId});			
+			}
+			else {
+
+				if (!this.account.localAccountId.startsWith("8:acs")) {					
+					threadId = "19:" + this.account.localAccountId + "_" + destination + "@unq.gbl.spaces";					
+				}
+				this.calls[id].addParticipant({microsoftTeamsUserId: destination}, {threadId});			
+			}
+		}		
+	}
+
+	/**
+	 * Use this method to remove a third party destination from a group call via the "ms-teams.call.connected" broadcast event
+	 * If there are only two participants left in a call, it will become a one-to-one call (p2p).
+	 * @param {string} id - The call id provided by ACS
+	 * @param {string} destination - The ACS recognised destination. It can be a fully normalized telephone number, an MS Teams user id or an ACS endpoint address. 	 	 
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.connected") {
+	 * 	  teams.removeThirdParty(event.data.id, "+447825589457");
+	 * }	 
+	 */
+	removeThirdParty(id, destination) {
+		if (this.calls[id])
+		{			
+			if (destination.startsWith("+"))  {
+				this.calls[id].removeParticipant({phoneNumber: destination});			
+			}
+			else {
+				this.calls[id].removeParticipant({microsoftTeamsUserId: destination});			
+			}
+		}		
+	}
+	
+	/**
+	 * Use this method to start a screen/desktop share on a connectd call
+	 * This method will cause a UI popup that will enable the user select a desktop screen or application window to share.
+	 * @param {string} id - The call id provided by ACS
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.connected") {
+	 * 	  teams.startScreenShare(event.data.id);
+	 * }	 
+	 */	
+	startScreenShare(id) {  
+		if (this.calls[id]) {
+			window.focus();	  
+			this.calls[id].startScreenSharing();
+			this.calls[id].__screensharing = true;
+		}
+	}
+
+	/**
+	 * Use this method to stop a screen/desktop share on a connectd call
+	 * @param {string} id - The call id provided by ACS
+	 * @example	 
+	 * if (event.data.event == "ms-teams.call.connected") {
+	 * 	  teams.stopScreenShare(event.data.id);
+	 * }	 
+	 */	
+	stopScreenShare(id) {
+		if (this.calls[id]) {
+			window.blur();	  
+			this.calls[id].stopScreenSharing();
+			this.calls[id].__screensharing = false;		
+		}	
+	}
+
+	/**
+	 * Called by {@link createChatClient} to subscribe for events of remote particpant
+	 * @param {object} remoteParticipant - The ACS remoteParticipant object. 	 
+	 * @private	 
+	 */		
+	subscribeToRemoteParticipant(remoteParticipant) {
+		console.log("subscribeToRemoteParticipant", remoteParticipant);
+		
+		try {
+			remoteParticipant.on('stateChanged', () => {
+				console.log("Remote participant state changed:", remoteParticipant.state);
+			});
+
+			remoteParticipant.videoStreams.forEach(remoteVideoStream => {
+				this.subscribeToRemoteVideoStream(remoteVideoStream)
+			});
+			
+			remoteParticipant.on('videoStreamsUpdated', e => {
+				e.added.forEach(remoteVideoStream => {
+					this.subscribeToRemoteVideoStream(remoteVideoStream)
+				});
+
+				e.removed.forEach(remoteVideoStream => {
+					console.log('Remote participant video stream was removed.');
+				})
+			});
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	/**
+	 * Called by {@link createChatClient} to subscribe for video events of remote particpant
+	 * This method will enable/disable the hidden embedded UI widget to show/hide any participant remote screenshare or video.
+	 * @param {object} remoteVideoStream - The ACS remoteVideoStream object. 	 
+	 * @private	 
+	 */	
+	async subscribeToRemoteVideoStream(remoteVideoStream) {
+		console.log("subscribeToRemoteVideoStream", remoteVideoStream.isAvailable);	
+		let videoStreamRenderer = new ACS.VideoStreamRenderer(remoteVideoStream);
+		let view;
+
+		const renderVideo = async () => {
+			try {
+				view = await videoStreamRenderer.createView();
+				this.remoteVideoContainer.hidden = false;
+				this.remoteVideoContainer.appendChild(view.target);
+				this.appContainer.hidden = true;
+				
+				console.debug("renderVideo", view.target);
+				
+			} catch (e) {
+				console.warn("Failed to createView", e);
+			}	
+		}
+		
+		remoteVideoStream.on('isAvailableChanged', async () => {
+			console.debug("isAvailableChanged", remoteVideoStream.isAvailable);			
+			// Participant has switched video on.
+			if (remoteVideoStream.isAvailable) {
+				await renderVideo();
+
+			// Participant has switched video off.
+			} else {
+				if (view) {
+					view.target.remove();
+					view.dispose();
+					view = undefined;
+					
+					this.remoteVideoContainer.hidden = true;
+					this.appContainer.hidden = false;								
+				}
+			}
+		});
+
+		// Participant has video on initially.
+		if (remoteVideoStream.isAvailable) {
+			await renderVideo();
+		}
+	}	
+}	</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="module.exports.html">exports</a></li></ul><h3>Global</h3><ul><li><a href="global.html#acceptCall">acceptCall</a></li><li><a href="global.html#addThirdParty">addThirdParty</a></li><li><a href="global.html#handleNotification">handleNotification</a></li><li><a href="global.html#hangupCall">hangupCall</a></li><li><a href="global.html#holdCall">holdCall</a></li><li><a href="global.html#loginUser">loginUser</a></li><li><a href="global.html#makeCall">makeCall</a></li><li><a href="global.html#rejectCall">rejectCall</a></li><li><a href="global.html#removeThirdParty">removeThirdParty</a></li><li><a href="global.html#resumeCall">resumeCall</a></li><li><a href="global.html#sendSms">sendSms</a></li><li><a href="global.html#startScreenShare">startScreenShare</a></li><li><a href="global.html#stopScreenShare">stopScreenShare</a></li><li><a href="global.html#transferCall">transferCall</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Thu May 12 2022 13:46:00 GMT+0100 (British Summer Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
