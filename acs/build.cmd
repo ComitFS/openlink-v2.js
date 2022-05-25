@@ -1,4 +1,4 @@
-call npm clean
+call npm clean-install
 call npm install
 call webpack --mode=none
 

@@ -23,12 +23,12 @@
   "homepage": "https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/communication/communication-identity",
   "sideEffects": false,
   "dependencies": {
-    "@azure/communication-identity": "^1.1.0-alpha.20220407.1",
-    "@azure/communication-calling": "^1.5.2-alpha.20220415.1",
-    "@azure/communication-chat": "^1.2.1-alpha.20220407.1",
-    "@azure/communication-sms": "^1.1.0-alpha.20220407.1",
-    "@azure/communication-common": "^2.0.0-alpha.20220407.1",
-    "@azure/msal-browser": "^2.22.1",
+    "@azure/communication-identity": "^1.1.0-alpha.20220523.1",
+    "@azure/communication-calling": "^1.5.4-beta.1",
+    "@azure/communication-chat": "^1.2.1-alpha.20220523.1",
+    "@azure/communication-sms": "^1.2.0-alpha.20220523.1",
+    "@azure/communication-common": "^2.1.0-alpha.20220523.1",
+    "@azure/msal-browser": "^2.24.0",
     "dotenv": "^8.2.0",
     "lit": "^2.1.3"
   }
