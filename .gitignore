@@ -1,3 +1,6 @@
 acs/dist
 acs/node_modules
 acs/package-lock.json
+lit/dist
+lit/node_modules
+lit/package-lock.json
