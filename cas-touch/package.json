@@ -1,0 +1,20 @@
+{
+  "name": "cas-touch",
+  "version": "0.1.0",
+  "description": "CAS API for StreamDeck",
+  "engine": {
+    "node": ">=8.0.0"
+  },
+  "keywords": [
+    "Azure",
+    "Communication",
+    "Node.js",
+    "JavaScript"
+  ],
+  "author": "ComitFS",
+  "license": "MIT",
+  "dependencies": {
+    "@elgato-stream-deck/webhid": "^5.7.0",
+    "buffer": "6.0.3"
+  }
+}
