@@ -4,6 +4,6 @@ acs/package-lock.json
 lit/dist
 lit/node_modules
 lit/package-lock.json
-cas-touch/dist
-cas-touch/node_modules
-cas-touch/package-lock.json
+stream-deck/dist
+stream-deck/node_modules
+stream-deck/package-lock.json
