@@ -14,9 +14,9 @@ async function ChaseDemo() {
 async function drawButtons(device, canvas, c) {
 	const ctx = canvas.getContext('2d');
 
-	for (let i = 0; i < device.NUM_KEYS; i++) {
-		if (ctx) {
-			const n = c + i;
+	for (let i = 0; i < device.CONTROLS.length; i++) {
+		if (ctx && device.CONTROLS[i].type == "button") {
+			const n = c + device.CONTROLS[i].index;
 			ctx.save();
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			// Start with a font that's 80% as high as the button. maxWidth
@@ -28,7 +28,7 @@ async function drawButtons(device, canvas, c) {
 			ctx.fillStyle = 'white';
 			ctx.fillText(n.toString(), 8, canvas.height * 0.9, canvas.width * 0.8);
 			const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
-			device.fillKeyBuffer(i, Buffer.from(id.data), { format: 'rgba' });
+			device.fillKeyBuffer(device.CONTROLS[i].index, (id.data), { format: 'rgba' });
 			ctx.restore();
 		}
 	}
@@ -37,9 +37,9 @@ async function drawButtons(device, canvas, c) {
 async function drawLCDs(device, canvas, c) {
 	const ctx = canvas.getContext('2d');
 
-	for (let i = 0; i < device.NUM_ENCODERS; i++) {
-		if (ctx) {
-			const n = c + i;
+	for (let i = 0; i < device.CONTROLS.length; i++) {
+		if (ctx && device.CONTROLS[i].type == "lcd-segment") {
+			const n = c + device.CONTROLS[i].id;
 			ctx.save();
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.font = `${canvas.height * 0.8}px "Arial"`;
@@ -49,27 +49,40 @@ async function drawLCDs(device, canvas, c) {
 			ctx.fillStyle = 'white';
 			ctx.fillText(n.toString(), 8, canvas.height * 0.9, canvas.width * 0.8);
 			const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
-			device.fillEncoderLcd(i, Buffer.from(id.data), { format: 'rgba' });
+			device.fillLcd(device.CONTROLS[i].id, (id.data), { format: 'rgba' });
 			ctx.restore();
 		}
 	}
+}
+
+function getEncoderPixelSize(device) {
+	let pixelSize = {};
+	
+	for (control of device.CONTROLS) {
+		if (control.type == "lcd-segment") return control.pixelSize;
+	}
+	return pixelSize;
 }
 	
 async function ChaseDemo(device) {
 	await device.clearPanel();
 	counter = 0;
-	const canvas = new OffscreenCanvas(device.ICON_SIZE, device.ICON_SIZE); //document.createElement('canvas');
-	canvas.width = device.ICON_SIZE;
-	canvas.height = device.ICON_SIZE;		
+	const canvas = new OffscreenCanvas(device.CONTROLS[0].pixelSize.height, device.CONTROLS[0].pixelSize.width);	
+	canvas.width = device.CONTROLS[0].pixelSize.width;
+	canvas.height = device.CONTROLS[0].pixelSize.height;		
 	await drawButtons(device, canvas, counter);
 
-	const lcdCanvas = new OffscreenCanvas(device.ICON_SIZE, device.ICON_SIZE); //document.createElement('canvas');
-	lcdCanvas.width = device.LCD_ENCODER_SIZE.width;
-	lcdCanvas.height = device.LCD_ENCODER_SIZE.height;				
-	await drawLCDs(device, lcdCanvas, counter);
+	const pixelSize = getEncoderPixelSize(device);
+	
+	if (pixelSize.width) {		
+		const lcdCanvas = new OffscreenCanvas(pixelSize.height, pixelSize.width); 
+		lcdCanvas.width = pixelSize.width;
+		lcdCanvas.height = pixelSize.height;	
+		await drawLCDs(device, lcdCanvas, counter);
+	}
 	
 	const doThing = async () => {
-		await drawLCDs(device, lcdCanvas, ++counter);
+		if (pixelSize.width) await drawLCDs(device, lcdCanvas, ++counter);
 		await drawButtons(device, canvas, ++counter);
 	};
 	
@@ -135,32 +148,22 @@ async function demoChange() {
 async function openDevice(device) {
     appendLog(`Device opened. Serial: ${await device.getSerialNumber()} Firmware: ${await device.getFirmwareVersion()}`);
     device.on('down', (key) => {
-        appendLog(`Key ${key} down`);
-        //currentDemo.keyDown(device, key).catch(console.error);
+        appendLog(`Key ${key.index} down`);
     });
     device.on('up', (key) => {
-        appendLog(`Key ${key} up`);
-        //currentDemo.keyUp(device, key).catch(console.error);
+        appendLog(`Key ${key.index} up`);
     });
-    device.on('encoderDown', (encoder) => {
-        appendLog(`Encoder ${encoder} down`);
-    });
-    device.on('encoderUp', (encoder) => {
-        appendLog(`Encoder ${encoder} up`);
-    });
-    device.on('rotateLeft', (encoder, amount) => {
-        appendLog(`Encoder ${encoder} left (${amount})`);
-    });
-    device.on('rotateRight', (encoder, amount) => {
-        appendLog(`Encoder ${encoder} right (${amount})`);
+
+    device.on('rotate', (encoder, amount) => {
+        appendLog(`Encoder ${encoder.index} rotate (${amount})`);
     });
     device.on('lcdShortPress', (encoder, position) => {
-        appendLog(`LCD short press ${encoder} (${position.x},${position.y})`);
+        appendLog(`LCD short press ${encoder.id} (${position.x},${position.y})`);
     });
-    device.on('lcdLongPress', (encoder, position) => {
-        appendLog(`LCD long press ${encoder} (${position.x},${position.y})`);
+    device.on('lcdLongPress', (control, position) => {
+        appendLog(`LCD long press ${control.id} (${position.x},${position.y})`);
     });
-    device.on('lcdSwipe', (_fromEncoder, _toEncoder, fromPosition, toPosition) => {
+    device.on('lcdSwipe', (control, fromPosition, toPosition) => {
         appendLog(`LCD swipe (${fromPosition.x},${fromPosition.y}) -> (${toPosition.x},${toPosition.y})`);
     });
     await currentDemo(device);

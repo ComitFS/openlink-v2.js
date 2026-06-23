@@ -1,6 +1,6 @@
 {
   "name": "cas-touch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CAS API for StreamDeck",
   "engine": {
     "node": ">=8.0.0"
@@ -14,7 +14,6 @@
   "author": "ComitFS",
   "license": "MIT",
   "dependencies": {
-    "@elgato-stream-deck/webhid": "^5.7.0",
-    "buffer": "6.0.3"
+    "@elgato-stream-deck/webhid": "^7.6.3"
   }
 }
