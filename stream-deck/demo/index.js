@@ -55,13 +55,24 @@ async function drawLCDs(device, canvas, c) {
 	}
 }
 
-function getEncoderPixelSize(device) {
+function getLcdPixelSize(device) {
 	let pixelSize = {};
 	
 	for (control of device.CONTROLS) {
 		if (control.type == "lcd-segment") return control.pixelSize;
 	}
 	return pixelSize;
+}
+
+async function doLCDDemo(device, counter) {
+	const pixelSize = getLcdPixelSize(device);
+	
+	if (pixelSize.width) {		
+		const lcdCanvas = new OffscreenCanvas(pixelSize.height, pixelSize.width); 
+		lcdCanvas.width = pixelSize.width;
+		lcdCanvas.height = pixelSize.height;	
+		await drawLCDs(device, lcdCanvas, counter);
+	}
 }
 	
 async function ChaseDemo(device) {
@@ -71,18 +82,10 @@ async function ChaseDemo(device) {
 	canvas.width = device.CONTROLS[0].pixelSize.width;
 	canvas.height = device.CONTROLS[0].pixelSize.height;		
 	await drawButtons(device, canvas, counter);
+	await doLCDDemo(device, counter);
 
-	const pixelSize = getEncoderPixelSize(device);
-	
-	if (pixelSize.width) {		
-		const lcdCanvas = new OffscreenCanvas(pixelSize.height, pixelSize.width); 
-		lcdCanvas.width = pixelSize.width;
-		lcdCanvas.height = pixelSize.height;	
-		await drawLCDs(device, lcdCanvas, counter);
-	}
-	
 	const doThing = async () => {
-		if (pixelSize.width) await drawLCDs(device, lcdCanvas, ++counter);
+		await doLCDDemo(device, ++counter);
 		await drawButtons(device, canvas, ++counter);
 	};
 	
